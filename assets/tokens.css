@@ -1,0 +1,76 @@
+/* ============================================
+   代号Life · PC 端 Design Tokens (V2 — 严谨复刻)
+   ============================================ */
+
+/* ===== 字体声明 ===== */
+@font-face {
+  font-family: 'LeZhen';                    /* 主标题：造字工房乐真体 */
+  src: url('./fonts/title-lezhen.ttf') format('truetype');
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'ZhengYuan';                 /* 副标题：汉仪正圆 85S */
+  src: url('./fonts/subtitle-zhengyuan-85.ttf') format('truetype');
+  font-weight: 700;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'ZhengYuan';                 /* 正文：汉仪正圆 75S */
+  src: url('./fonts/body-zhengyuan-75.ttf') format('truetype');
+  font-weight: 400;
+  font-display: swap;
+}
+
+:root {
+  /* ---- 字体 ---- */
+  --ff-title:  'LeZhen', 'PingFang SC', system-ui, sans-serif;     /* 大标题、按钮 */
+  --ff-body:   'ZhengYuan', 'PingFang SC', system-ui, sans-serif;  /* 副标题(700) / 正文(400) */
+
+  /* ---- 颜色（取自 Figma） ---- */
+  --c-bg-warm:       #FAD688;   /* 暖黄底（应用主背景） */
+  --c-paper:         #FFEFC8;   /* 米色纸张（内容底板） */
+  --c-paper-edge:    #E8C97A;   /* 纸张边缘阴影 */
+  --c-text-brown:    #9A7641;   /* 主文字-褐色 */
+  --c-text-amber:    #AA6D23;   /* 强调文字-琥珀 */
+  --c-text-deep:     #6B4F24;   /* 深褐文字 */
+  --c-accent-red:    #E97756;   /* 红橙：标签、关闭按钮、未读 */
+  --c-accent-green:  #A8B544;   /* 绿色：筛选按钮、tag */
+  --c-tag-orange:    #FF6F30;   /* 标签底色：精选 */
+  --c-mask:          rgba(0,0,0,.55);
+
+  /* ---- 字号规范（PC + 主机端共用，最小不低于卡片标题 3/4） ----
+     卡片标题 28px 是基准，最小 21px（28 × 3/4）
+     主机端 1080P 远观也清晰，PC 端不显得空旷 */
+  --fs-mega:     48px;   /* 巨标题：hero 类、超大数字 */
+  --fs-display:  36px;   /* 系统总标题（梦境 & RP房）、profile 名字 */
+  --fs-h1:       32px;   /* 章节大标题 */
+  --fs-h2:       28px;   /* 卡片标题、Tab、按钮主文字 ★ 基准 */
+  --fs-h3:       24px;   /* 副标题 */
+  --fs-body:     21px;   /* 正文 = 28 × 3/4，最小允许字号 */
+  --fs-caption:  21px;   /* 元信息 / 时间戳 / 计数（与正文同字号，避免过小） */
+
+  /* ---- 间距 ---- */
+  --sp-1: 4px;  --sp-2: 8px;  --sp-3: 12px; --sp-4: 16px;
+  --sp-5: 24px; --sp-6: 32px; --sp-7: 48px; --sp-8: 64px;
+
+  /* ---- 圆角 ---- */
+  --r-sm:  6px;
+  --r-md:  12px;
+  --r-lg:  20px;
+  --r-xl:  28px;
+  --r-pill: 999px;
+
+  /* ---- 阴影 ---- */
+  --shadow-card:   0 4px 12px rgba(75, 50, 20, .15);
+  --shadow-paper:  inset 0 0 0 1px rgba(155, 118, 65, .08), 0 8px 24px rgba(75, 50, 20, .12);
+  --shadow-pop:    0 16px 40px rgba(40, 25, 0, .35);
+
+  /* ---- 布局 ---- */
+  --layout-sidebar-w:  120px;
+  --layout-topbar-h:   88px;
+
+  /* ---- 动效 ---- */
+  --t-fast:    120ms cubic-bezier(.4,0,.2,1);
+  --t-normal:  220ms cubic-bezier(.4,0,.2,1);
+}
