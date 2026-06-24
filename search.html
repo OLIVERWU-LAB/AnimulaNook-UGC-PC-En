@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="assets/viewport-fit.js"></script>
+  <title>Search · Code Life</title>
+  <link rel="stylesheet" href="assets/global.css?v=2">
+  <link rel="stylesheet" href="assets/components.css?v=121">
+
+</head>
+<body>
+
+<div class="app" style="grid-template-columns: 1fr;">
+
+  <header class="search-page-top">
+    <div class="search-page-title">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="11" cy="11" r="7"></circle>
+        <line x1="21" y1="21" x2="16.5" y2="16.5"></line>
+      </svg>
+      <span>Search</span>
+    </div>
+
+    <div class="search-page-input">
+      <input type="text" id="searchInput" placeholder="" autofocus>
+      <span class="clear-btn" id="clearBtn" title="Clear" aria-label="Clear">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="12" cy="12" r="11" fill="currentColor"></circle>
+          <path d="M8 8 L16 16 M16 8 L8 16" stroke="#FFEFC8" stroke-width="2.6" stroke-linecap="round"/>
+        </svg>
+      </span>
+      <span class="submit" id="submitBtn">Search</span>
+    </div>
+
+    <div class="spacer"></div>
+
+    <button class="topbar-btn btn-close search-back-btn" onclick="history.back()" title="Back">
+      <img src="assets/img/search-back.png" alt="Back">
+    </button>
+  </header>
+
+  <main class="search-page-main">
+    <div class="search-page-board">
+
+      <!-- 标题悬浮在 cards-area 外面，不随滚动 -->
+      <div class="search-page-section-title" id="sectionTitle">History</div>
+
+      <div class="cards-wrap">
+        <section class="cards-area" id="cardsArea">
+          <!-- 默认状态：History -->
+          <div id="historyState">
+            <div class="history-pills">
+              <span class="history-pill">History Title</span>
+              <span class="history-pill">History Title</span>
+              <span class="history-pill">History Title Long</span>
+              <span class="history-pill">History Title Long</span>
+            </div>
+          </div>
+
+          <!-- 搜索结果状态 -->
+          <div id="resultState" style="display:none;">
+            <div class="cards-grid" id="resultGrid"></div>
+          </div>
+        </section>
+        <div class="scrollbar" id="scrollbar">
+          <div class="scrollbar-thumb" id="scrollThumb"></div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="assets/shell.js?v=42"></script>
+<script src="assets/detail-popup.js?v=66"></script>
+<script>
+const input = document.getElementById('searchInput');
+const clearBtn = document.getElementById('clearBtn');
+const submitBtn = document.getElementById('submitBtn');
+const historyState = document.getElementById('historyState');
+const resultState = document.getElementById('resultState');
+const sectionTitle = document.getElementById('sectionTitle');
+
+input.focus();
+
+function showResult() {
+  historyState.style.display = 'none';
+  resultState.style.display = 'block';
+  sectionTitle.textContent = 'Results (24)';
+  document.getElementById('resultGrid').innerHTML = makeMixedCards(12).map(renderCard).join('');
+  setTimeout(setupScrollbar, 50);
+}
+function showHistory() {
+  historyState.style.display = 'block';
+  resultState.style.display = 'none';
+  sectionTitle.textContent = 'History';
+  setTimeout(setupScrollbar, 50);
+}
+
+clearBtn.onclick = () => {
+  input.value = '';
+  input.focus();
+  showHistory();
+};
+
+submitBtn.onclick = () => {
+  if (input.value.trim()) showResult();
+};
+
+input.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && input.value.trim()) showResult();
+});
+
+document.querySelectorAll('.history-pill').forEach(p => {
+  p.onclick = () => {
+    input.value = p.textContent;
+    showResult();
+  };
+});
+
+setupScrollbar();
+</script>
+</body>
+</html>

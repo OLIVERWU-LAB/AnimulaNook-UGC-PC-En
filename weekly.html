@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="assets/viewport-fit.js"></script>
+  <title>Weekly · Code Life</title>
+  <link rel="stylesheet" href="assets/global.css?v=2">
+  <link rel="stylesheet" href="assets/components.css?v=121">
+</head>
+<body>
+
+<div class="app">
+  <header class="top-row"></header>
+  <aside class="sidebar"></aside>
+  <main class="main">
+    <div class="paper-board">
+      <div class="cards-wrap">
+        <section class="cards-area" id="cardsArea">
+          <div class="cards-grid" id="grid"></div>
+        </section>
+        <div class="scrollbar" id="scrollbar">
+          <div class="scrollbar-thumb" id="scrollThumb"></div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div class="fab-group">
+  <button class="fab" id="fabDream">Random Design</button>
+  <button class="fab" id="fabRP">Random Live</button>
+</div>
+
+<script src="assets/shell.js?v=42"></script>
+<script src="assets/detail-popup.js?v=66"></script>
+<script>
+renderSidebar('weekly');
+renderTopRow({ showFilter: false, showSort: false, showSearch: true });
+
+setupPagedCardGrid({
+  grid: document.getElementById('grid'),
+  items: makeMixedCards(36),
+});
+setupScrollbar();
+
+/* FAB → 提示弹窗 */
+function showFabConfirm(kind) {
+  const isDream = kind === 'dream';
+  const targetWord = isDream ? 'design' : 'live room';
+  const mask = document.createElement('div');
+  mask.className = 'modal-mask';
+  mask.innerHTML = `
+    <div class="confirm-popup" onclick="event.stopPropagation()">
+      <div class="confirm-title">Notice</div>
+      <div class="confirm-desc">No available ${targetWord} to join. Create your own ${targetWord}?</div>
+      <div class="confirm-actions">
+        <button class="btn-mini btn-red" data-act="cancel">Cancel</button>
+        <button class="btn-mini btn-green" data-act="go">Create</button>
+      </div>
+    </div>
+  `;
+  function close() { mask.remove(); }
+  mask.onclick = close;
+  mask.querySelector('[data-act="cancel"]').onclick = close;
+  mask.querySelector('[data-act="go"]').onclick = () => {
+    close();
+    // 跳转：演示用，弹一个新的 modal 即可
+  };
+  document.body.appendChild(mask);
+}
+
+document.getElementById('fabDream').onclick = () => showFabConfirm('dream');
+document.getElementById('fabRP').onclick    = () => showFabConfirm('rp');
+</script>
+</body>
+</html>

@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="assets/viewport-fit.js"></script>
+  <title>My Social · Code Life</title>
+  <link rel="stylesheet" href="assets/global.css?v=2">
+  <link rel="stylesheet" href="assets/components.css?v=121">
+  <link rel="stylesheet" href="assets/pages.css?v=2">
+</head>
+<body>
+
+<div class="app" style="grid-template-columns: 1fr;">
+
+  <header class="search-page-top social-page-top">
+    <div class="search-page-title">
+      <span class="ic"><img src="assets/img/icon-people.png" alt=""></span>
+      <span>My Social</span>
+    </div>
+    <div class="spacer"></div>
+    <button class="topbar-btn btn-close search-back-btn" onclick="history.back()" title="Back">
+      <img src="assets/img/search-back.png" alt="Back">
+    </button>
+  </header>
+
+  <main class="search-page-main">
+    <div class="search-page-board">
+
+      <div class="center-tabs" id="socialTabs">
+        <span class="center-tab" data-tab="follow">Follow</span>
+        <span class="center-tab active" data-tab="mutual">Mutual</span>
+        <span class="center-tab" data-tab="fans">Fans</span>
+      </div>
+
+      <div class="section-title" id="sectionTitle">
+        <span class="name" id="sectionName">Mutual</span>
+        <span class="count" id="sectionCount">(7)</span>
+      </div>
+
+      <div class="cards-wrap">
+        <section class="cards-area" id="cardsArea" style="padding-right: 124px;">
+          <div class="social-list" id="list"></div>
+        </section>
+        <div class="scrollbar" id="scrollbar">
+          <div class="scrollbar-thumb" id="scrollThumb"></div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="assets/shell.js?v=42"></script>
+<script>
+const TAB_INFO = {
+  follow: { name: 'Following', count: '24', btnClass: 'followed', btnText: 'Following',  n: 12 },
+  mutual: { name: 'Mutual', count: '7',  btnClass: 'followed', btnText: 'Mutual', n: 7  },
+  fans:   { name: 'Followers', count: '124', btnClass: 'back',     btnText: 'Follow Back',    n: 14 },
+};
+
+const socialData = Object.fromEntries(
+  Object.entries(TAB_INFO).map(([tab, cfg]) => [
+    tab,
+    Array.from({ length: cfg.n }, (_, index) => ({
+      id: index,
+      btnClass: cfg.btnClass,
+      btnText: cfg.btnText,
+    })),
+  ])
+);
+let currentSocialTab = 'mutual';
+
+function loadSocial(tab) {
+  const cfg = TAB_INFO[tab] || TAB_INFO.mutual;
+  currentSocialTab = TAB_INFO[tab] ? tab : 'mutual';
+  document.getElementById('sectionName').textContent  = cfg.name;
+  document.getElementById('sectionCount').textContent = `(${cfg.count})`;
+
+  document.querySelectorAll('#socialTabs .center-tab').forEach(p => p.classList.toggle('active', p.dataset.tab === currentSocialTab));
+
+  document.getElementById('list').innerHTML = socialData[currentSocialTab].map(item => `
+    <div class="social-row">
+      <div class="av"></div>
+      <div class="info">
+        <div class="name">AuthorName123</div>
+        <div class="meta">Fans 1.2w</div>
+      </div>
+      <button class="btn-follow ${item.btnClass}" data-index="${item.id}">${item.btnText}</button>
+    </div>
+  `).join('');
+
+  setTimeout(setupScrollbar, 50);
+}
+
+document.querySelectorAll('#socialTabs .center-tab').forEach(p => p.onclick = () => loadSocial(p.dataset.tab));
+
+document.getElementById('list').addEventListener('click', event => {
+  const button = event.target.closest('.btn-follow');
+  if (!button) return;
+
+  const item = socialData[currentSocialTab][Number(button.dataset.index)];
+  const isFollowed = button.classList.contains('followed');
+  const willFollow = !isFollowed;
+
+  if (willFollow) {
+    item.btnClass = 'followed';
+    item.btnText = currentSocialTab === 'mutual' ? 'Mutual' : 'Following';
+  } else {
+    item.btnClass = currentSocialTab === 'follow' ? 'follow' : 'back';
+    item.btnText = currentSocialTab === 'follow' ? 'Follow' : 'Follow Back';
+  }
+
+  button.className = `btn-follow ${item.btnClass}`;
+  button.textContent = item.btnText;
+  showPageToast(willFollow ? 'Followed' : 'Unfollowed', document.querySelector('.search-page-board'));
+});
+
+const initialTab = new URLSearchParams(location.search).get('tab') || 'mutual';
+loadSocial(initialTab);
+setupScrollbar();
+</script>
+</body>
+</html>

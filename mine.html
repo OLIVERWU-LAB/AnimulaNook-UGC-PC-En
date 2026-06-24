@@ -1,0 +1,1188 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="assets/viewport-fit.js"></script>
+  <title>Mine · Code Life</title>
+  <link rel="stylesheet" href="assets/global.css?v=2">
+  <link rel="stylesheet" href="assets/components.css?v=121">
+  <link rel="stylesheet" href="assets/pages.css">
+  <link rel="stylesheet" href="./assets/components.css?v=121">
+  <link rel="stylesheet" href="./assets/components.css?v=121">
+  <link rel="stylesheet" href="./assets/components.css?v=121">
+</head>
+<body>
+
+<div class="app">
+  <header class="top-row"></header>
+  <aside class="sidebar"></aside>
+  <main class="main">
+    <div class="paper-board paper-board--mine">
+
+      <!-- 统一滚动：个人卡 → Tab 吸顶 → 卡片在 Tab 下方裁切滚动 -->
+      <div class="cards-wrap">
+        <section class="cards-area mine-scroll" id="cardsArea">
+          <div class="profile-card">
+            <div class="profile-avatar"></div>
+            <div class="profile-info">
+              <div class="profile-head">
+                <h1 class="profile-name">PlayerName123</h1>
+                <a class="profile-tag" href="#">Creator Hub</a>
+              </div>
+              <div class="profile-stats">
+                <div class="item is-static"><div class="num">9999</div><div class="label">Likes</div></div>
+                <div class="item is-static"><div class="num">20.7w</div><div class="label">Saves</div></div>
+                <div class="item is-static"><div class="num">1503.2w</div><div class="label">Plays</div></div>
+                <span class="sep"></span>
+                <div class="item" onclick="location.href='social.html?tab=follow'"><div class="num">9999</div><div class="label">Follow</div></div>
+                <div class="item" onclick="location.href='social.html?tab=mutual'"><div class="num">9999</div><div class="label">Mutual</div></div>
+                <div class="item" onclick="location.href='social.html?tab=fans'"><div class="num">9999</div><div class="label">Fans</div></div>
+              </div>
+            </div>
+            <div class="profile-actions">
+              <button class="btn-create-dream" onclick="location.href='create-dream.html'">
+                <img src="assets/img/el_plus-sign.png" alt=""> New Dream
+              </button>
+              <button class="btn-go-live" onclick="location.href='create-live.html'">
+                <img src="assets/img/icon-park-solid_play.png" alt=""> Go Live
+              </button>
+            </div>
+          </div>
+
+          <div class="center-tabs mine-tabs-sticky" id="mineTabs">
+            <span class="center-tab active" data-tab="dream">Designs</span>
+            <span class="center-tab" data-tab="live">Live<span class="red-dot green-dot" data-notice="live"></span></span>
+            <span class="center-tab" data-tab="fav">Saves</span>
+            <span class="center-tab" data-tab="appt">Bookings<span class="red-dot" data-notice="appt"></span></span>
+          </div>
+
+          <div class="mine-tab-pane" id="mineTabPane">
+            <div class="mine-tab-body" id="tabContent"></div>
+          </div>
+        </section>
+        <div class="scrollbar" id="scrollbar">
+          <div class="scrollbar-thumb" id="scrollThumb"></div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<script src="assets/shell.js?v=42"></script>
+<script src="assets/detail-popup.js?v=71"></script>
+<script>
+renderSidebar('mine');
+renderTopRow({ showFilter: false, showSort: false, showSearch: false, showHistory: true });
+
+const tabContent = document.getElementById('tabContent');
+let livePreviewScheduled = true;
+let livePreviewTime = '2026.08.13 23:00';
+let appointmentUnread = true;
+let currentMineTab = 'dream';
+
+function updateMineNotices() {
+  const liveDot = document.querySelector('[data-notice="live"]');
+  const apptDot = document.querySelector('[data-notice="appt"]');
+  if (liveDot) liveDot.hidden = !livePreviewScheduled;
+  if (apptDot) apptDot.hidden = !appointmentUnread;
+  const tone = appointmentUnread ? 'red' : (livePreviewScheduled ? 'green' : 'none');
+  window.setMineNoticeTone?.(tone);
+}
+
+// === 家装方案 tab ===
+function renderDream() {
+  // 草稿卡 + 公开 + 仅好友 + 仅自己 等 9 张
+  const items = [
+    { kind:'dream', cover:'assets/img/card-cover-dream.png', title:'Untitled 01', label:'Draft', visibility:'self', isDraft:true },
+    { kind:'dream', cover:'assets/img/card-cover-dream.png', title:'Untitled 02', label:'Draft', visibility:'self', isDraft:true },
+    { kind:'dream', cover:'assets/img/card-cover-dream.png', likes:9999, stars:9999, title:'Quiet Afternoon', label:'Play Tag', visibility:'public' },
+    { kind:'dream', cover:'assets/img/card-cover-dream.png', likes:9999, stars:9999, title:'Mountain Teahouse', label:'Play Tag', visibility:'friend' },
+    { kind:'dream', cover:'assets/img/card-cover-dream.png', likes:9999, stars:9999, title:'Childhood Attic', label:'Play Tag', visibility:'public' },
+    { kind:'dream', cover:'assets/img/card-cover-dream.png', likes:9999, stars:9999, title:'Snowy Study', label:'Play Tag', visibility:'self' },
+    { kind:'dream', cover:'assets/img/card-cover-dream.png', likes:9999, stars:9999, title:'Spring Garden', label:'Play Tag', visibility:'public' },
+    { kind:'dream', cover:'assets/img/card-cover-dream.png', likes:9999, stars:9999, title:'Seaside Cabin', label:'Play Tag', visibility:'friend' },
+    { kind:'dream', cover:'assets/img/card-cover-dream.png', likes:9999, stars:9999, title:'Forest Library', label:'Play Tag', visibility:'public' },
+    { kind:'dream', cover:'assets/img/card-cover-dream.png', likes:9999, stars:9999, title:'Autumn Courtyard', label:'Play Tag', visibility:'self' },
+    { kind:'dream', cover:'assets/img/card-cover-dream.png', likes:9999, stars:9999, title:'Starry Terrace', label:'Play Tag', visibility:'public' },
+    { kind:'dream', cover:'assets/img/card-cover-dream.png', likes:9999, stars:9999, title:'Snow Cabin', label:'Play Tag', visibility:'friend' },
+    { kind:'dream', cover:'assets/img/card-cover-dream.png', likes:9999, stars:9999, title:'Rainforest Walk', label:'Play Tag', visibility:'public' },
+    { kind:'dream', cover:'assets/img/card-cover-dream.png', likes:9999, stars:9999, title:'Old Town Pier', label:'Play Tag', visibility:'self' },
+    { kind:'dream', cover:'assets/img/card-cover-dream.png', likes:9999, stars:9999, title:'Sunset Pier', label:'Play Tag', visibility:'public' },
+  ];
+  tabContent.innerHTML = `<div class="cards-grid">${items.map(it => mineCardHtml(it)).join('')}</div>`;
+  bindDraftDelete();
+}
+
+function mineCardHtml(it) {
+  const visMap = { public: 'Public', friend: 'Friends Only', self: 'Private' };
+  const visClass = it.visibility ? `visibility-pill ${it.visibility}` : '';
+  const visPill = (it.visibility && !it.isDraft) ? `<span class="${visClass}">${visMap[it.visibility]}</span>` : '';
+  const stats = it.isDraft ? '' : `
+    ${visPill}
+    <span class="stat-right">
+      <span class="stat"><img src="assets/img/stat-like.png" alt="">${it.likes}</span>
+      <span class="stat"><img src="assets/img/stat-star.png" alt="">${it.stars}</span>
+    </span>`;
+  const trash = it.isDraft ? `<button class="card-trash" data-title="${it.title}"><img src="assets/img/icon-trash.png" alt=""></button>` : '';
+  const featured = it.isDraft ? '' : '<span class="card-tag-featured">Featured</span>';
+  const draftAttrs = it.isDraft ? ` role="button" tabindex="0" aria-label="Edit draft ${it.title}"` : '';
+  const ownAttrs = it.isDraft ? '' : ` data-own-content="true" data-visibility="${it.visibility || ''}"`;
+  return `
+    <article class="card ${it.isDraft ? 'card-draft' : ''}"${draftAttrs}${ownAttrs}>
+      ${featured}
+      <div class="card-cover" style="background-image:url(${it.cover})">
+        <span class="card-tag-left">${it.label}</span>
+        ${trash}
+        ${stats ? `<div class="card-stats">${stats}</div>` : ''}
+      </div>
+      <div class="card-title-bar">
+        <span class="avatar"></span>
+        <span class="title">${it.title}</span>
+      </div>
+    </article>`;
+}
+
+function bindDraftDelete() {
+  document.querySelectorAll('.card-trash').forEach(btn => {
+    btn.onclick = (e) => {
+      e.stopPropagation();
+      const title = btn.dataset.title;
+      window.showConfirm(
+        'Delete Draft',
+        `Delete draft "${title}"? It cannot be recovered.`,
+        [
+          { label: 'Not Now', cls: 'btn-green' },
+          { label: 'Delete', cls: 'btn-red', cb: () => btn.closest('.card').remove() }
+        ]
+      );
+    };
+  });
+}
+
+const LIVE_VIS_LABELS = { public: 'Public', friend: 'Fans Only', self: 'Private' };
+
+function renderLiveHistoryCard(it) {
+  return `
+    <article class="card card--mine-live" data-own-live="true" data-visibility="${it.visibility}">
+      <span class="card-tag-featured">Featured</span>
+      <div class="card-cover" style="background-image:url(${it.cover})">
+        <span class="card-tag-left">${it.label}</span>
+        <span class="time-on-cover">${it.timeOnCover}</span>
+        <div class="card-stats">
+          <span class="visibility-pill ${it.visibility}">${LIVE_VIS_LABELS[it.visibility]}</span>
+          <span class="stat-right">
+            <span class="stat"><img src="assets/img/stat-people.png" alt="">${it.viewers}</span>
+          </span>
+        </div>
+      </div>
+      <div class="card-title-bar">
+        <span class="avatar"></span>
+        <span class="title">${it.title}</span>
+      </div>
+    </article>`;
+}
+
+// === 直播间 tab ===
+function renderLive() {
+  const upcoming = livePreviewScheduled ? `
+    <div class="next-live-bar">
+      <div class="next-live-bar__icon" aria-hidden="true"></div>
+      <div class="next-live-bar__main">
+        <div class="next-live-bar__row">
+          <span class="next-live-bar__label">Next Live</span>
+          <span class="next-live-bar__time">${livePreviewTime}</span>
+          <span class="live-countdown">00d 03h left</span>
+        </div>
+        <div class="next-live-bar__sub">Subs 99.2w</div>
+      </div>
+      <div class="next-live-bar__actions">
+        <button type="button" class="btn-mine-muted" onclick="openTimeEditPopup('edit')">Edit Time</button>
+        <button type="button" class="btn-mine-preview-cancel" onclick="cancelLive()">Cancel</button>
+      </div>
+    </div>` : `
+    <div class="next-live-bar next-live-bar--unset">
+      <div class="next-live-bar__icon" aria-hidden="true"></div>
+      <div class="next-live-bar__main">
+        <div class="next-live-bar__row">
+          <span class="next-live-bar__label">Next Live</span>
+          <span class="next-live-bar__time">Not set</span>
+        </div>
+        <div class="next-live-bar__sub">Subs --</div>
+      </div>
+      <div class="next-live-bar__actions">
+        <button type="button" class="btn-create-live-preview" onclick="openTimeEditPopup('create')">Schedule</button>
+      </div>
+    </div>`;
+
+  const history = Array.from({ length: 9 }, (_, i) => {
+    const day = String(28 - (i % 9)).padStart(2, '0');
+    const month = i < 5 ? '02' : '03';
+    return {
+      cover: 'assets/img/card-cover-live.png',
+      label: 'Play Tag',
+      timeOnCover: `2026-${month}-${day} 11:00 - 18:00 (UTC+8)`,
+      visibility: ['public', 'friend', 'self'][i % 3],
+      viewers: 6 + (i % 4),
+      title: 'Live Title 12 Chars Max',
+    };
+  });
+
+  tabContent.innerHTML = `
+    ${upcoming}
+    <div class="mine-section">
+      <h3 class="mine-section__title"><span class="name">Past Lives</span><span class="count">28</span></h3>
+      <div class="cards-grid">${history.map(renderLiveHistoryCard).join('')}</div>
+    </div>`;
+}
+
+function cancelLive() {
+  window.showConfirm(
+    'Cancel Preview',
+    'Cancel this live preview?',
+    [
+      { label: 'Not Now', cls: 'btn-green' },
+      { label: 'Cancel', cls: 'btn-red', cb: () => {
+        livePreviewScheduled = false;
+        updateMineNotices();
+        renderLive();
+        setTimeout(refreshMineScroll, 50);
+      } }
+    ]
+  );
+}
+
+function applyLivePreviewTime(label) {
+  livePreviewScheduled = true;
+  livePreviewTime = label;
+  updateMineNotices();
+  renderLive();
+  setTimeout(refreshMineScroll, 50);
+}
+
+// === 收藏 tab ===
+function renderFav() {
+  const items = makeMixedCards(27);
+  tabContent.innerHTML = `<div class="cards-grid">${items.map(renderCard).join('')}</div>`;
+}
+
+function renderLiveNowCard(it) {
+  return `
+    <article class="live-now-card">
+      <div class="live-now-card__cover" style="background-image:url(${it.cover})">
+        <span class="live-pill">LIVE</span>
+        <span class="watching">${it.watching} watching</span>
+      </div>
+      <div class="live-now-card__body">
+        <div class="live-now-card__author">
+          <span class="av"></span>
+          <span class="name">${it.author}</span>
+        </div>
+        <div class="live-now-card__title">${it.title}</div>
+        <button type="button" class="btn-go">View</button>
+      </div>
+    </article>`;
+}
+
+// === 预约 tab ===
+function renderAppt() {
+  const liveNow = [
+    { cover: 'assets/img/card-cover-live.png', watching: '2.1w', author: 'AuthorName123', title: 'Live Title 12 Chars Max' },
+    { cover: 'assets/img/card-cover-live.png', watching: '8.6k', author: 'AuthorName123', title: 'Live Title 12 Chars Max' },
+  ];
+
+  const upcoming = Array.from({ length: 8 }, (_, i) => ({
+    author: 'AuthorName123',
+    when: i < 2 ? 'Tonight 7:00 PM' : `03.${String(1 + i).padStart(2, '0')} 20:30 starts`,
+    whenTone: i < 2 ? 'tonight' : 'date',
+    title: 'Live Title 12 Chars Max',
+  }));
+
+  tabContent.innerHTML = `
+    <div class="mine-section">
+      <h3 class="mine-section__title mine-section__title--live">
+        <span class="mine-section__mark mine-section__mark--dot" aria-hidden="true"></span>
+        <span class="name">Live Now</span><span class="count">2</span>
+      </h3>
+      <div class="live-now-grid">${liveNow.map(renderLiveNowCard).join('')}</div>
+    </div>
+    <div class="mine-section">
+      <h3 class="mine-section__title mine-section__title--upcoming">
+        <span class="mine-section__mark mine-section__mark--bell" aria-hidden="true"></span>
+        <span class="name">Upcoming</span><span class="count">28</span>
+      </h3>
+      <div class="appointment-list">
+        ${upcoming.map((it) => `
+          <div class="appointment-row">
+            <span class="av"></span>
+            <div class="appointment-row__info">
+              <div class="appointment-row__meta">
+                <span class="author">${it.author}</span>
+                <span class="when when--${it.whenTone}">${it.when}</span>
+              </div>
+              <div class="appointment-row__title">${it.title}</div>
+            </div>
+            <button type="button" class="btn-appt-cancel">Cancel</button>
+          </div>
+        `).join('')}
+      </div>
+    </div>`;
+}
+
+// Tab 切换
+const renderers = { dream: renderDream, live: renderLive, fav: renderFav, appt: renderAppt };
+document.querySelectorAll('#mineTabs .center-tab').forEach(t => {
+  t.onclick = () => {
+    const nextTab = t.dataset.tab;
+    if (currentMineTab === 'appt' && nextTab !== 'appt' && appointmentUnread) {
+      appointmentUnread = false;
+      updateMineNotices();
+    }
+    document.querySelectorAll('#mineTabs .center-tab').forEach(x => x.classList.remove('active'));
+    t.classList.add('active');
+    currentMineTab = nextTab;
+    renderers[nextTab]();
+    const area = document.getElementById('cardsArea');
+    if (area) area.scrollTop = 0;
+    setTimeout(refreshMineScroll, 50);
+  };
+});
+
+/**
+ * Tab 透明 + 顶缘裁切：用 scrollTop 算裁切量（不读 getBoundingClientRect，避免弹性/延迟）
+ * 左右/底阴影：由 .mine-scroll 的 overflow-clip-margin 留出，不用 max-height 视口
+ */
+function setupMineTabClip() {
+  const area = document.getElementById('cardsArea');
+  const pane = document.getElementById('mineTabPane');
+  const body = document.getElementById('tabContent');
+  const tabs = document.getElementById('mineTabs');
+  if (!area || !pane || !body || !tabs) return () => {};
+
+  const CLIP_OFFSET = 28; /* 上切割线在 Tab 下缘再往下（数值越大，切口越低） */
+  let clipStart = 0;
+
+  // 支持滚动驱动动画时，裁切交给合成器（CSS），与滚动同帧，无延迟回弹
+  const SDA = !!(window.CSS && CSS.supports && CSS.supports('animation-timeline: scroll()'));
+
+  function measure() {
+    clipStart = pane.offsetTop - tabs.offsetHeight;
+    if (SDA) {
+      const scrollMax = Math.max(0, area.scrollHeight - area.clientHeight);
+      const range = Math.max(1, scrollMax - clipStart);
+      pane.style.setProperty('--mine-clip-start', clipStart + 'px');
+      pane.style.setProperty('--mine-clip-range', range + 'px');
+    }
+  }
+
+  function paintClip() {
+    const raw = area.scrollTop - clipStart;
+    const cut = raw <= 0 ? 0 : Math.ceil(raw) + CLIP_OFFSET;
+    /* 仅裁切顶部（Tab 下方），右/下/左用负 inset 向外扩 40px，
+       避免裁掉卡片的下方/两侧阴影 */
+    pane.style.clipPath = cut > 0 ? `inset(${cut}px -40px -40px -40px)` : 'none';
+  }
+
+  function sync() {
+    measure();
+    if (!SDA) paintClip();
+  }
+
+  if (SDA) {
+    pane.classList.add('mine-clip-sda');
+  } else {
+    area.addEventListener('scroll', paintClip, { passive: true });
+  }
+  window.addEventListener('resize', sync);
+  sync();
+  return sync;
+}
+
+const syncMineTabClip = setupMineTabClip();
+
+function refreshMineScroll() {
+  setupScrollbar();
+  syncMineTabClip();
+}
+
+renderDream();
+updateMineNotices();
+setTimeout(refreshMineScroll, 50);
+</script>
+<script>
+(function () {
+  function setupCreateDescScroll(box) {
+    if (!box || box.dataset.createScrollReady === '1') return;
+    var textarea = box.querySelector('textarea');
+    if (!textarea) return;
+    box.dataset.createScrollReady = '1';
+    function applyNormalPlusOneLineHeight() {
+      var style = getComputedStyle(textarea);
+      var probe = document.createElement('textarea');
+      probe.value = '测\n测';
+      probe.style.position = 'absolute';
+      probe.style.left = '-9999px';
+      probe.style.top = '-9999px';
+      probe.style.visibility = 'hidden';
+      probe.style.width = '1000px';
+      probe.style.height = 'auto';
+      probe.style.padding = '0';
+      probe.style.border = '0';
+      probe.style.overflow = 'hidden';
+      probe.style.fontFamily = style.fontFamily;
+      probe.style.fontSize = style.fontSize;
+      probe.style.fontWeight = style.fontWeight;
+      probe.style.fontStyle = style.fontStyle;
+      probe.style.letterSpacing = style.letterSpacing;
+      probe.style.lineHeight = 'normal';
+      document.body.appendChild(probe);
+      var twoLineHeight = probe.scrollHeight;
+      probe.value = '测';
+      var oneLineHeight = probe.scrollHeight;
+      probe.remove();
+      var normalLineHeight = Math.max(oneLineHeight, twoLineHeight - oneLineHeight);
+      if (normalLineHeight > 0) {
+        textarea.style.setProperty('line-height', (normalLineHeight + 1) + 'px', 'important');
+      }
+    }
+    textarea.style.removeProperty('line-height');
+    var thumb = document.createElement('span');
+    thumb.className = 'create-desc-scroll-thumb';
+    box.appendChild(thumb);
+    var state = { dragging: false, startY: 0, startScroll: 0 };
+    var trackTop = 20;
+    var trackBottom = 48;
+    function updateThumb() {
+      var scrollMax = textarea.scrollHeight - textarea.clientHeight;
+      var trackHeight = Math.max(44, box.clientHeight - trackTop - trackBottom);
+      if (scrollMax <= 1) {
+        thumb.style.opacity = '0';
+        thumb.style.height = '0px';
+        return;
+      }
+      var thumbHeight = Math.max(44, Math.round(trackHeight * textarea.clientHeight / textarea.scrollHeight));
+      var movable = Math.max(1, trackHeight - thumbHeight);
+      var top = trackTop + Math.round((textarea.scrollTop / scrollMax) * movable);
+      thumb.style.height = thumbHeight + 'px';
+      thumb.style.transform = 'translateY(' + top + 'px)';
+      thumb.style.opacity = '.95';
+    }
+    textarea.addEventListener('scroll', updateThumb);
+    function keepCaretLineVisible() {
+      var maxScrollTop = Math.max(0, textarea.scrollHeight - textarea.clientHeight);
+      textarea.scrollTop = maxScrollTop;
+    }
+    textarea.addEventListener('input', function () {
+      requestAnimationFrame(function () {
+        if (textarea === document.activeElement) {
+          keepCaretLineVisible();
+          setTimeout(keepCaretLineVisible, 0);
+        }
+        updateThumb();
+      });
+    });
+    thumb.addEventListener('pointerdown', function (event) {
+      event.preventDefault();
+      state.dragging = true;
+      state.startY = event.clientY;
+      state.startScroll = textarea.scrollTop;
+      thumb.setPointerCapture(event.pointerId);
+    });
+    thumb.addEventListener('pointermove', function (event) {
+      if (!state.dragging) return;
+      var scrollMax = textarea.scrollHeight - textarea.clientHeight;
+      var trackHeight = Math.max(44, box.clientHeight - trackTop - trackBottom);
+      var thumbHeight = Math.max(44, Math.round(trackHeight * textarea.clientHeight / textarea.scrollHeight));
+      var movable = Math.max(1, trackHeight - thumbHeight);
+      textarea.scrollTop = state.startScroll + ((event.clientY - state.startY) / movable) * scrollMax;
+    });
+    thumb.addEventListener('pointerup', function () {
+      state.dragging = false;
+    });
+    thumb.addEventListener('pointercancel', function () {
+      state.dragging = false;
+    });
+    requestAnimationFrame(updateThumb);
+  }
+  function scan() {
+    document.querySelectorAll('.create-desc-box').forEach(setupCreateDescScroll);
+  }
+  scan();
+  new MutationObserver(scan).observe(document.documentElement, { childList: true, subtree: true });
+})();
+</script>
+<script>
+(function () {
+  function compactText(node) {
+    return (node.textContent || '').replace(/\s+/g, '');
+  }
+
+  function findByText(words) {
+    var nodes = Array.from(document.querySelectorAll('button, a, [role="button"], .btn, .action-btn'));
+    return nodes.find(function (node) {
+      var text = compactText(node);
+      return words.some(function (word) {
+        return text.indexOf(word) !== -1;
+      });
+    });
+  }
+
+  function syncLiveStartButtonSize() {
+    var base = findByText(['NewDream', 'CreateDesign']);
+    var target = findByText(['GoLive']);
+    if (!base || !target) return;
+
+    var style = getComputedStyle(base);
+    // 用 offsetWidth/offsetHeight（布局像素，不受 zoom 影响）。
+    // getBoundingClientRect 返回的是经 html zoom 缩放后的「视觉像素」，
+    // 若写回 style.width（按布局像素解释）会被 zoom 二次缩小，导致两按钮不等宽。
+    var w = base.offsetWidth, h = base.offsetHeight;
+    if (!w || !h) return;
+
+    target.classList.add('live-start-match-dream');
+    target.style.width = w + 'px';
+    target.style.minWidth = w + 'px';
+    target.style.height = h + 'px';
+    target.style.minHeight = h + 'px';
+    target.style.padding = style.padding;
+    target.style.borderRadius = style.borderRadius;
+    target.style.fontSize = style.fontSize;
+    target.style.lineHeight = style.lineHeight;
+  }
+
+  function scheduleSync() {
+    requestAnimationFrame(syncLiveStartButtonSize);
+    setTimeout(syncLiveStartButtonSize, 120);
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', scheduleSync);
+  } else {
+    scheduleSync();
+  }
+  window.addEventListener('load', scheduleSync);
+  new MutationObserver(scheduleSync).observe(document.documentElement, {
+    childList: true,
+    subtree: true
+  });
+})();
+</script>
+<script>
+(function () {
+  function textOf(node) {
+    return (node && node.textContent || '').replace(/\s+/g, '');
+  }
+
+  function closeLiveDropdown(popup) {
+    popup.querySelectorAll('.create-dropdown, .create-select-mask').forEach(function (node) {
+      node.remove();
+    });
+    popup.querySelectorAll('.create-select.is-open').forEach(function (node) {
+      node.classList.remove('is-open');
+    });
+  }
+
+  function setupLiveDescScroll(box) {
+    if (!box || box.dataset.createScrollReady === '1') return;
+    var textarea = box.querySelector('textarea');
+    if (!textarea) return;
+    box.dataset.createScrollReady = '1';
+    var thumb = document.createElement('span');
+    thumb.className = 'create-desc-scroll-thumb';
+    box.appendChild(thumb);
+    var state = { dragging: false, startY: 0, startScroll: 0 };
+    var trackTop = 24;
+    var trackBottom = 78;
+    function updateThumb() {
+      var scrollMax = textarea.scrollHeight - textarea.clientHeight;
+      var trackHeight = Math.max(44, box.clientHeight - trackTop - trackBottom);
+      if (scrollMax <= 1) {
+        thumb.style.opacity = '0';
+        thumb.style.height = '0px';
+        return;
+      }
+      var thumbHeight = Math.max(44, Math.round(trackHeight * textarea.clientHeight / textarea.scrollHeight));
+      var movable = Math.max(1, trackHeight - thumbHeight);
+      var top = trackTop + Math.round((textarea.scrollTop / scrollMax) * movable);
+      thumb.style.height = thumbHeight + 'px';
+      thumb.style.transform = 'translateY(' + top + 'px)';
+      thumb.style.opacity = '.95';
+    }
+    textarea.addEventListener('scroll', updateThumb);
+    textarea.addEventListener('input', function () {
+      requestAnimationFrame(updateThumb);
+    });
+    thumb.addEventListener('pointerdown', function (event) {
+      event.preventDefault();
+      state.dragging = true;
+      state.startY = event.clientY;
+      state.startScroll = textarea.scrollTop;
+      thumb.setPointerCapture(event.pointerId);
+    });
+    thumb.addEventListener('pointermove', function (event) {
+      if (!state.dragging) return;
+      var scrollMax = textarea.scrollHeight - textarea.clientHeight;
+      var trackHeight = Math.max(44, box.clientHeight - trackTop - trackBottom);
+      var thumbHeight = Math.max(44, Math.round(trackHeight * textarea.clientHeight / textarea.scrollHeight));
+      var movable = Math.max(1, trackHeight - thumbHeight);
+      textarea.scrollTop = state.startScroll + ((event.clientY - state.startY) / movable) * scrollMax;
+    });
+    thumb.addEventListener('pointerup', function () {
+      state.dragging = false;
+    });
+    thumb.addEventListener('pointercancel', function () {
+      state.dragging = false;
+    });
+    requestAnimationFrame(updateThumb);
+  }
+
+  function setupFormScroll(shell) {
+    var scroller = shell.querySelector('.create-live-form-scroll');
+    var thumb = shell.querySelector('.live-form-scroll-thumb');
+    if (!scroller || !thumb) return;
+    var state = { dragging: false, startY: 0, startScroll: 0 };
+    function updateThumb() {
+      var scrollMax = scroller.scrollHeight - scroller.clientHeight;
+      if (scrollMax <= 1) {
+        thumb.style.display = 'none';
+        return;
+      }
+      thumb.style.display = 'block';
+      var trackHeight = shell.clientHeight;
+      var thumbHeight = Math.max(58, Math.round(trackHeight * scroller.clientHeight / scroller.scrollHeight));
+      var movable = Math.max(1, trackHeight - thumbHeight);
+      var top = Math.round((scroller.scrollTop / scrollMax) * movable);
+      thumb.style.height = thumbHeight + 'px';
+      thumb.style.transform = 'translateY(' + top + 'px)';
+    }
+    scroller.addEventListener('scroll', updateThumb);
+    thumb.addEventListener('pointerdown', function (event) {
+      event.preventDefault();
+      state.dragging = true;
+      state.startY = event.clientY;
+      state.startScroll = scroller.scrollTop;
+      thumb.setPointerCapture(event.pointerId);
+    });
+    thumb.addEventListener('pointermove', function (event) {
+      if (!state.dragging) return;
+      var scrollMax = scroller.scrollHeight - scroller.clientHeight;
+      var trackHeight = shell.clientHeight;
+      var thumbHeight = Math.max(58, Math.round(trackHeight * scroller.clientHeight / scroller.scrollHeight));
+      var movable = Math.max(1, trackHeight - thumbHeight);
+      scroller.scrollTop = state.startScroll + ((event.clientY - state.startY) / movable) * scrollMax;
+    });
+    thumb.addEventListener('pointerup', function () {
+      state.dragging = false;
+    });
+    thumb.addEventListener('pointercancel', function () {
+      state.dragging = false;
+    });
+    requestAnimationFrame(updateThumb);
+  }
+
+  function setupCounters(popup) {
+    popup.querySelectorAll('[data-limit]').forEach(function (input) {
+      var count = input.closest('.create-field-title, .create-desc-box').querySelector('em');
+      var limit = Number(input.dataset.limit || 0);
+      function update() {
+        count.textContent = input.value.length + '/' + limit;
+        count.classList.toggle('is-over', input.value.length > limit);
+      }
+      input.addEventListener('input', update);
+      update();
+    });
+  }
+
+  function setupChoices(popup) {
+    popup.querySelectorAll('.create-radios[data-single="true"]').forEach(function (group) {
+      group.addEventListener('click', function (event) {
+        var btn = event.target.closest('button');
+        if (!btn) return;
+        group.querySelectorAll('button').forEach(function (item) {
+          item.classList.toggle('is-active', item === btn);
+        });
+      });
+    });
+    popup.querySelectorAll('.create-checks button, .live-save-template').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        btn.classList.toggle('is-active');
+      });
+    });
+  }
+
+  function setupSelects(popup) {
+    var scroller = popup.querySelector('.create-live-form-scroll');
+
+    // 菜单始终在选项条下方
+    function positionDropdown(btn, menu) {
+      var popupRect = window.layoutRect(popup);
+      var buttonRect = window.layoutRect(btn);
+      menu.style.left = (buttonRect.left - popupRect.left) + 'px';
+      menu.style.width = buttonRect.width + 'px';
+      menu.style.top = (buttonRect.bottom - popupRect.top + 8) + 'px';
+    }
+
+    // 菜单可覆盖到底部按钮上方，但不能超出弹窗下边框；超出则上滑刚好放下
+    function ensureMenuInPopup(btn, menu) {
+      if (!scroller) return;
+      var pr = window.layoutRect(popup);
+      var mr = window.layoutRect(menu);
+      var overflow = mr.bottom - (pr.bottom - 12);
+      if (overflow > 0.5) {
+        scroller.scrollTo({ top: scroller.scrollTop + overflow, behavior: 'smooth' });
+        setTimeout(function () { positionDropdown(btn, menu); }, 220);
+      }
+    }
+
+    function revealField(btn, extraBottom, done) {
+      if (!scroller) {
+        done();
+        return;
+      }
+
+      var field = btn.closest('.create-field');
+      var scrollRect = window.layoutRect(scroller);
+      var fieldRect = window.layoutRect(field);
+      var topPadding = 22;
+      // 底部预留 = 基础间距 + 下拉菜单高度，保证选项条与展开的菜单都完整可见
+      var bottomPadding = 24 + (extraBottom || 0);
+      var delta = 0;
+
+      if (fieldRect.bottom > scrollRect.bottom - bottomPadding) {
+        delta = fieldRect.bottom - (scrollRect.bottom - bottomPadding);
+      } else if (fieldRect.top < scrollRect.top + topPadding) {
+        delta = fieldRect.top - (scrollRect.top + topPadding);
+      }
+
+      if (Math.abs(delta) < 1) {
+        done();
+        return;
+      }
+
+      scroller.scrollTo({
+        top: scroller.scrollTop + delta,
+        behavior: 'smooth'
+      });
+      setTimeout(done, 220);
+    }
+
+    popup.querySelectorAll('.create-select').forEach(function (btn) {
+      btn.addEventListener('click', function (event) {
+        event.preventDefault();
+        event.stopPropagation();
+        var wasOpen = btn.classList.contains('is-open');
+        closeLiveDropdown(popup);
+        if (wasOpen) return;
+
+        var mask = document.createElement('div');
+        mask.className = 'create-select-mask';
+        popup.appendChild(mask);
+        mask.addEventListener('click', function () {
+          closeLiveDropdown(popup);
+        });
+
+        var menu = document.createElement('div');
+        menu.className = 'create-dropdown';
+        ['Option 1', 'Option 2', 'Option 3'].forEach(function (label) {
+          var item = document.createElement('button');
+          item.type = 'button';
+          item.textContent = label;
+          item.className = btn.dataset.value === label ? 'is-active' : '';
+          item.addEventListener('click', function () {
+            btn.dataset.value = label;
+            btn.innerHTML = label + '<i></i>';
+            closeLiveDropdown(popup);
+          });
+          menu.appendChild(item);
+        });
+        btn.classList.add('is-open');
+        menu.classList.add('create-dropdown--portal');
+        popup.appendChild(menu);
+        positionDropdown(btn, menu);   // 始终在下方，无翻转、无上方闪烁
+        ensureMenuInPopup(btn, menu);  // 仅当超出弹窗下边框时才上滑
+
+        if (scroller) {
+          scroller.addEventListener('scroll', function updateDropdownPosition() {
+            if (!menu.isConnected) {
+              scroller.removeEventListener('scroll', updateDropdownPosition);
+              return;
+            }
+            positionDropdown(btn, menu);
+          }, { passive: true });
+        }
+      });
+    });
+
+    // 输入框聚焦时：若字段被上/下裁切，自动滚动，连同标题完整显示
+    popup.querySelectorAll('.create-field input, .create-field textarea').forEach(function (el) {
+      el.addEventListener('focus', function () {
+        revealField(el, 0, function () {});
+      });
+    });
+  }
+
+  function openCreateLivePopup() {
+    document.querySelectorAll('.create-live-mask').forEach(function (node) {
+      node.remove();
+    });
+
+    var mask = document.createElement('div');
+    mask.className = 'modal-mask create-live-mask';
+    mask.innerHTML = [
+      '<section class="detail-popup create-dream-popup create-live-popup">',
+      '  <button type="button" class="create-popup-close" aria-label="Close"></button>',
+      '  <div class="create-popup-title"><img src="./assets/img/create-live-title-icon.png" alt="">Create Live Room</div>',
+      '  <div class="create-live-body">',
+      '    <div class="create-live-left">',
+      '      <div class="create-upload-card"><div class="create-live-upload-plus"><b>+</b>Upload</div></div>',
+      '      <button type="button" class="live-template-btn">My Templates</button>',
+      '    </div>',
+      '    <div class="create-live-form-shell">',
+      '      <div class="create-live-form-scroll">',
+      '        <div class="create-live-form">',
+      '          <label class="create-field create-field-title"><span>Title</span><input data-limit="12" placeholder="Enter live title"><em>0/12</em></label>',
+      '          <label class="create-field create-field-textarea"><span>Notice</span><div class="create-desc-box"><textarea data-limit="40" placeholder="Enter announcement"></textarea><em>0/40</em></div></label>',
+      '          <label class="create-field create-field-textarea"><span>Rules</span><div class="create-desc-box"><textarea data-limit="40" placeholder="Enter rules"></textarea><em>0/40</em></div></label>',
+      '          <label class="create-field"><span>Play Mode</span><button type="button" class="create-select">Select<i></i></button></label>',
+      '          <label class="create-field"><span>Select Map</span><button type="button" class="create-select">Select<i></i></button></label>',
+      '          <div class="create-field create-radios-field"><span>Privacy</span><div class="create-radios" data-single="true"><button type="button" class="is-active"><i></i>Everyone</button><button type="button"><i></i>Friends</button><button type="button"><i></i>Private</button></div></div>',
+      '          <div class="create-field create-radios-field"><span>Mid-game Join</span><div class="create-checks"><button type="button" class="is-active"><i></i>Allow</button></div></div>',
+      '        </div>',
+      '      </div>',
+      '      <span class="live-form-scroll-thumb"></span>',
+      '    </div>',
+      '  </div>',
+      '  <img class="create-deco live-create-deco" src="./assets/img/create-popup-deco.png" alt="">',
+      '  <div class="create-popup-bottom create-live-bottom"><button type="button" class="btn-mini btn-red">Cancel</button><button type="button" class="btn-mini btn-green">Create</button><button type="button" class="live-save-template"><i></i>Save template</button></div>',
+      '</section>'
+    ].join('');
+    document.body.appendChild(mask);
+
+    var popup = mask.querySelector('.create-live-popup');
+    popup.querySelector('.create-popup-close').addEventListener('click', function () {
+      mask.remove();
+    });
+    popup.querySelector('.btn-red').addEventListener('click', function () {
+      mask.remove();
+    });
+    setupCounters(popup);
+    setupChoices(popup);
+    setupSelects(popup);
+    popup.querySelectorAll('.create-desc-box').forEach(setupLiveDescScroll);
+    setupFormScroll(popup.querySelector('.create-live-form-shell'));
+  }
+
+  window.openCreateLivePopup = openCreateLivePopup;
+
+  document.addEventListener('click', function (event) {
+    var btn = event.target.closest('button, a, [role="button"], .btn, .action-btn');
+    if (!btn || !textOf(btn).includes('GoLive')) return;
+    event.preventDefault();
+    event.stopPropagation();
+    openCreateLivePopup();
+  }, true);
+})();
+</script>
+<script>
+(function () {
+  function compactText(node) {
+    return (node && node.textContent || '').replace(/\s+/g, '');
+  }
+
+  function openTimeEditPopup(mode) {
+    mode = mode === 'create' ? 'create' : 'edit';
+    var isCreate = mode === 'create';
+    document.querySelectorAll('.time-edit-mask').forEach(function (node) {
+      node.remove();
+    });
+
+    var mask = document.createElement('div');
+    mask.className = 'modal-mask time-edit-mask';
+    mask.innerHTML = [
+      '<section class="detail-popup time-edit-popup', isCreate ? ' is-create' : '', '">',
+      '  <button type="button" class="create-popup-close" aria-label="Close"></button>',
+      '  <div class="create-popup-title"><img src="./assets/img/Frame%202119903832.png" alt="">Live Preview</div>',
+      '  <div class="time-edit-content">',
+      '    <h2 class="time-edit-heading">', isCreate ? 'Set Next Live Time' : 'Edit Time', '</h2>',
+      isCreate ? '' : '    <div class="time-origin">Was: May 28&nbsp;&nbsp;Thu&nbsp;&nbsp;22h&nbsp;00m</div>',
+      '    <div class="time-picker" role="group" aria-label="Select live time">',
+      '      <button type="button" class="time-row is-fade"><span></span><span>20h</span><span>58m</span></button>',
+      '      <button type="button" class="time-row"><span>May 27&nbsp;&nbsp;Wed</span><span>21h</span><span>59m</span></button>',
+      '      <button type="button" class="time-row is-selected"><span>May 28&nbsp;&nbsp;Thu</span><span>22h</span><span>00m</span></button>',
+      '      <button type="button" class="time-row"><span>May 29&nbsp;&nbsp;Fri</span><span>23h</span><span>01m</span></button>',
+      '      <button type="button" class="time-row is-fade"><span>May 30&nbsp;&nbsp;Sat</span><span></span><span>02m</span></button>',
+      '    </div>',
+      '    <div class="time-tip">Subscribers will be notified at this time</div>',
+      '    <div class="create-deco time-deco"></div>',
+      '  </div>',
+      '  <div class="create-popup-bottom time-edit-bottom"><button type="button" class="btn-mini btn-red">Cancel</button><button type="button" class="btn-mini btn-green">', isCreate ? 'OK' : 'Edit', '</button></div>',
+      '</section>'
+    ].join('');
+    document.body.appendChild(mask);
+
+    var popup = mask.querySelector('.time-edit-popup');
+    popup.querySelector('.create-popup-close').addEventListener('click', function () {
+      mask.remove();
+    });
+    popup.querySelector('.btn-red').addEventListener('click', function () {
+      mask.remove();
+    });
+    var picker = popup.querySelector('.time-picker');
+    var itemHeight = 84;
+    var wheelRAF = 0;
+    var columns = {
+      date: {
+        values: ['May 26&nbsp;&nbsp;Tue', 'May 27&nbsp;&nbsp;Wed', 'May 28&nbsp;&nbsp;Thu', 'May 29&nbsp;&nbsp;Fri', 'May 30&nbsp;&nbsp;Sat', 'May 31&nbsp;&nbsp;Sun'],
+        index: 2,
+        offset: 0,
+        velocity: 0,
+        loop: false
+      },
+      hour: {
+        values: Array.from({ length: 24 }, function (_, index) {
+          return String(index).padStart(2, '0') + 'h';
+        }),
+        index: 22,
+        offset: 0,
+        velocity: 0,
+        loop: true
+      },
+      minute: {
+        values: Array.from({ length: 60 }, function (_, index) {
+          return String(index).padStart(2, '0') + 'm';
+        }),
+        index: 0,
+        offset: 0,
+        velocity: 0,
+        loop: true
+      }
+    };
+    var drag = null;
+
+    function selectedTimeLabel() {
+      var dateText = columns.date.values[columns.date.index]
+        .replace(/&nbsp;/g, ' ')
+        .replace(/\s+(Mon|Tue|Wed|Thu|Fri|Sat|Sun)$/, '')
+        .trim();
+      var hourText = columns.hour.values[columns.hour.index].replace('h', '');
+      var minuteText = columns.minute.values[columns.minute.index].replace('m', '');
+      return dateText + ' ' + hourText + ':' + minuteText;
+    }
+
+    function clampColumn(col, value) {
+      var column = columns[col];
+      if (column.loop) {
+        return (value % column.values.length + column.values.length) % column.values.length;
+      }
+      return Math.max(0, Math.min(column.values.length - 1, value));
+    }
+
+    function canStep(col, amount) {
+      var column = columns[col];
+      if (column.loop) return true;
+      return column.index + amount >= 0 && column.index + amount < column.values.length;
+    }
+
+    function valueAt(col, delta) {
+      var column = columns[col];
+      var next = column.index + delta;
+      if (!column.loop && (next < 0 || next >= column.values.length)) return '';
+      return column.values[clampColumn(col, next)];
+    }
+
+    function renderPicker() {
+      picker.innerHTML = ['date', 'hour', 'minute'].map(function (col) {
+        var column = columns[col];
+        var items = [];
+        for (var delta = -4; delta <= 4; delta += 1) {
+          var text = valueAt(col, delta);
+          if (!text) continue;
+          var y = delta * itemHeight + column.offset;
+          var distance = Math.min(3, Math.abs(y) / itemHeight);
+          var scale = Math.max(.74, 1 - distance * .11);
+          var opacity = Math.max(.22, 1 - distance * .27);
+          var color = distance < .42 ? '#7A3E00' : '#A36A32';
+          items.push(
+            '<div class="time-wheel-item' + (Math.abs(y) < itemHeight * .32 ? ' is-selected' : '') + '"' +
+            ' data-col="' + col + '" data-delta="' + delta + '"' +
+            ' style="--time-item-y:' + y.toFixed(2) + ';--time-item-scale:' + scale.toFixed(3) + ';--time-item-opacity:' + opacity.toFixed(3) + ';--time-item-color:' + color + '">' +
+            text +
+            '</div>'
+          );
+        }
+        return '<div class="time-wheel" data-col="' + col + '">' + items.join('') + '</div>';
+      }).join('');
+    }
+
+    function columnFromEvent(event) {
+      var target = event.target.closest('[data-col]');
+      if (target && columns[target.dataset.col]) return target.dataset.col;
+      var rect = picker.getBoundingClientRect();
+      var x = event.clientX - rect.left;
+      if (x < rect.width * .46) return 'date';
+      if (x < rect.width * .73) return 'hour';
+      return 'minute';
+    }
+
+    function applyOffset(col, delta) {
+      var column = columns[col];
+      column.offset += delta;
+      while (column.offset <= -itemHeight) {
+        if (!canStep(col, 1)) {
+          column.offset = Math.max(column.offset, -itemHeight * .42);
+          break;
+        }
+        column.index = clampColumn(col, column.index + 1);
+        column.offset += itemHeight;
+      }
+      while (column.offset >= itemHeight) {
+        if (!canStep(col, -1)) {
+          column.offset = Math.min(column.offset, itemHeight * .42);
+          break;
+        }
+        column.index = clampColumn(col, column.index - 1);
+        column.offset -= itemHeight;
+      }
+      renderPicker();
+    }
+
+    function animateOffset(col, from, to) {
+      var column = columns[col];
+      var start = performance.now();
+      var duration = 130;
+      function tick(now) {
+        var t = Math.min(1, (now - start) / duration);
+        var eased = 1 - Math.pow(1 - t, 3);
+        column.offset = from + (to - from) * eased;
+        renderPicker();
+        if (t < 1) requestAnimationFrame(tick);
+      }
+      requestAnimationFrame(tick);
+    }
+
+    function snapColumn(col) {
+      var column = columns[col];
+      if (column.offset <= -itemHeight / 2 && canStep(col, 1)) {
+        column.index = clampColumn(col, column.index + 1);
+        column.offset += itemHeight;
+      } else if (column.offset >= itemHeight / 2 && canStep(col, -1)) {
+        column.index = clampColumn(col, column.index - 1);
+        column.offset -= itemHeight;
+      }
+      animateOffset(col, column.offset, 0);
+    }
+
+    function runWheelInertia(col) {
+      if (wheelRAF) return;
+      function tick() {
+        wheelRAF = 0;
+        var active = false;
+        ['date', 'hour', 'minute'].forEach(function (key) {
+          var column = columns[key];
+          if (Math.abs(column.velocity) < .35) return;
+          active = true;
+          applyOffset(key, column.velocity);
+          column.velocity *= column.stopping ? .76 : .88;
+        });
+        if (active) {
+          wheelRAF = requestAnimationFrame(tick);
+        } else {
+          ['date', 'hour', 'minute'].forEach(function (key) {
+            if (columns[key].stopping) {
+              columns[key].stopping = false;
+              snapColumn(key);
+            }
+          });
+        }
+      }
+      wheelRAF = requestAnimationFrame(tick);
+    }
+
+    picker.addEventListener('wheel', function (event) {
+      event.preventDefault();
+      var col = columnFromEvent(event);
+      var column = columns[col];
+      column.velocity += -event.deltaY * .12;
+      column.velocity = Math.max(-38, Math.min(38, column.velocity));
+      column.stopping = false;
+      clearTimeout(column.stopTimer);
+      column.stopTimer = setTimeout(function () {
+        column.stopping = true;
+        runWheelInertia(col);
+      }, 110);
+      runWheelInertia(col);
+    }, { passive: false });
+
+    picker.addEventListener('click', function (event) {
+      if (drag && drag.moved) return;
+      var item = event.target.closest('.time-wheel-item');
+      if (!item) return;
+      var delta = Number(item.dataset.delta || 0);
+      if (!delta) return;
+      var col = item.dataset.col;
+      applyOffset(col, -delta * itemHeight);
+      snapColumn(col);
+    });
+
+    picker.addEventListener('pointerdown', function (event) {
+      var col = columnFromEvent(event);
+      columns[col].velocity = 0;
+      columns[col].stopping = false;
+      drag = { col: col, lastY: event.clientY, moved: false };
+      picker.classList.add('is-dragging');
+      picker.setPointerCapture(event.pointerId);
+    });
+
+    picker.addEventListener('pointermove', function (event) {
+      if (!drag) return;
+      var delta = event.clientY - drag.lastY;
+      if (Math.abs(delta) > 1) drag.moved = true;
+      drag.lastY = event.clientY;
+      applyOffset(drag.col, delta);
+    });
+
+    function stopDrag() {
+      if (!drag) return;
+      var col = drag.col;
+      drag = null;
+      picker.classList.remove('is-dragging');
+      snapColumn(col);
+    }
+
+    picker.addEventListener('pointerup', stopDrag);
+    picker.addEventListener('pointercancel', stopDrag);
+    popup.querySelector('.btn-green').addEventListener('click', function () {
+      var selected = selectedTimeLabel();
+      window.showConfirm(
+        'Live Time',
+        isCreate
+          ? 'Start live at ' + selected + '?'
+          : 'Change live time to ' + selected + '?',
+        [
+          { label: 'Cancel', cls: 'btn-red' },
+          { label: 'OK', cls: 'btn-green', cb: function () {
+            mask.remove();
+            applyLivePreviewTime(selected);
+          } }
+        ]
+      );
+    });
+    renderPicker();
+  }
+
+  window.openTimeEditPopup = openTimeEditPopup;
+
+  document.addEventListener('click', function (event) {
+    var btn = event.target.closest('button, a, [role="button"], .btn, .action-btn, .time-btn');
+    if (!btn) return;
+    var text = compactText(btn);
+    if (!text.includes('EditTime') && !text.includes('LiveTime')) return;
+    event.preventDefault();
+    event.stopPropagation();
+    openTimeEditPopup('edit');
+  }, true);
+})();
+</script>
+</body>
+</html>

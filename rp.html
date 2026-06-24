@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="assets/viewport-fit.js"></script>
+  <title>RP Room · Code Life</title>
+  <link rel="stylesheet" href="assets/global.css?v=2">
+  <link rel="stylesheet" href="assets/components.css?v=121">
+
+</head>
+<body>
+
+<div class="app">
+  <header class="top-row"></header>
+  <aside class="sidebar"></aside>
+  <main class="main">
+    <div class="paper-board">
+
+      <div class="center-tabs" id="rpTabs">
+        <span class="center-tab active" data-tab="sub">Subscribed</span>
+        <span class="center-tab" data-tab="all">All Live</span>
+      </div>
+
+      <div class="cards-wrap">
+        <section class="cards-area" id="cardsArea">
+          <div class="cards-grid" id="grid"></div>
+        </section>
+        <div class="scrollbar" id="scrollbar">
+          <div class="scrollbar-thumb" id="scrollThumb"></div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="assets/shell.js?v=42"></script>
+<script src="assets/detail-popup.js?v=66"></script>
+<script>
+renderSidebar('rp');
+renderTopRow({ showFilter: true, showSort: true, showSearch: true, sortLabel: 'Latest' });
+
+// 排序：游玩人数 → 在线人数
+buildSortPanel([
+  { label: 'All' },
+  { label: 'Latest' },
+  { label: 'Hot' },
+  { label: 'Online' },
+], 'Latest');
+
+const grid = document.getElementById('grid');
+const cardsArea = document.getElementById('cardsArea');
+const tabScrollTop = { sub: 0, all: 0 };
+let currentTab = 'sub';
+let currentPager = null;
+
+function loadTab(tab) {
+  if (currentPager) currentPager.destroy();
+  currentPager = setupPagedCardGrid({
+    grid,
+    area: cardsArea,
+    items: makeLiveCards(36, tab === 'sub'),
+  });
+
+  requestAnimationFrame(() => {
+    cardsArea.scrollTop = tabScrollTop[tab];
+    cardsArea.dispatchEvent(new Event('scroll'));
+  });
+}
+loadTab('sub');
+
+document.querySelectorAll('#rpTabs .center-tab').forEach(t => {
+  t.onclick = () => {
+    const nextTab = t.dataset.tab;
+    if (nextTab === currentTab) return;
+
+    tabScrollTop[currentTab] = cardsArea.scrollTop;
+    document.querySelectorAll('#rpTabs .center-tab').forEach(x => x.classList.remove('active'));
+    t.classList.add('active');
+    currentTab = nextTab;
+    loadTab(currentTab);
+  };
+});
+
+setupScrollbar();
+
+/* RP 房筛选 - 完整内容 */
+window.openFilter = function() {
+  const mask = document.createElement('div');
+  mask.className = 'modal-mask';
+  mask.innerHTML = `
+    <div class="modal-popup" onclick="event.stopPropagation()">
+      <div class="modal-close"><img src="assets/img/btn-close.png" alt="Close"></div>
+      <div class="modal-header">
+        <img class="ic" src="assets/img/btn-filter-active.png" alt=""> Filter
+      </div>
+
+      <div class="filter-section">
+        <div class="filter-options cols-2">
+          <div class="filter-option active"><span class="radio"></span><span>Friends</span></div>
+          <div class="filter-option active"><span class="radio"></span><span>Joinable</span></div>
+        </div>
+      </div>
+
+      <div class="filter-section">
+        <div class="filter-label-row">
+          <div class="filter-label">Mode (multi)</div>
+        </div>
+        <div class="filter-options">
+          <div class="filter-option"><span class="radio"></span><span>Play Mode</span></div>
+          <div class="filter-option active"><span class="radio"></span><span>Play Mode</span></div>
+          <div class="filter-option"><span class="radio"></span><span>Play Mode</span></div>
+          <div class="filter-option"><span class="radio"></span><span>Play Mode</span></div>
+          <div class="filter-option"><span class="radio"></span><span>Play Mode</span></div>
+        </div>
+      </div>
+
+      <div class="filter-section">
+        <div class="filter-label-row">
+          <div class="filter-label">Players (multi)</div>
+        </div>
+        <div class="filter-options">
+          <div class="filter-option active"><span class="radio"></span><span>Solo</span></div>
+          <div class="filter-option active"><span class="radio"></span><span>Duo</span></div>
+          <div class="filter-option"><span class="radio"></span><span>3-6</span></div>
+          <div class="filter-option"><span class="radio"></span><span>6+</span></div>
+        </div>
+      </div>
+
+      <div class="filter-actions">
+        <button class="btn-pill btn-reset">Reset</button>
+        <button class="btn-pill btn-confirm">OK</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(mask);
+
+  const fb = document.getElementById('filterBtn');
+  function close() { mask.remove(); }   // 关闭不改变筛选状态
+
+  mask.onclick = close;
+  mask.querySelector('.modal-close').onclick = close;
+  mask.querySelectorAll('.filter-option').forEach(opt => {
+    opt.onclick = () => {
+      opt.classList.toggle('active');
+      // 修改了筛选条件 → 切换到激活图标
+      if (fb) fb.querySelector('img').src = 'assets/img/btn-filter-active.png';
+    };
+  });
+  mask.querySelector('.btn-reset').onclick = () => {
+    mask.querySelectorAll('.filter-option').forEach(o => o.classList.remove('active'));
+    // 重置回默认筛选图标
+    if (fb) fb.querySelector('img').src = 'assets/img/btn-filter-default.png';
+  };
+  mask.querySelector('.btn-confirm').onclick = close;
+};
+</script>
+</body>
+</html>

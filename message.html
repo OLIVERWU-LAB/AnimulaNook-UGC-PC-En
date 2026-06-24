@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="assets/viewport-fit.js"></script>
+  <title>Messages · Code Life</title>
+  <link rel="stylesheet" href="assets/global.css?v=2">
+  <link rel="stylesheet" href="assets/components.css?v=107">
+  <link rel="stylesheet" href="assets/pages.css?v=7">
+  <style>
+    /* Comment TAB "Reply" overlay input */
+    .msg-reply-modal {
+      width: 78%; max-width: 1180px;
+      background: #FFF4D8;
+      border-radius: 32px;
+      padding: 36px 44px 32px;
+      box-shadow: 0 26px 64px rgba(80, 50, 20, .32);
+      box-sizing: border-box;
+    }
+    .msg-reply-head { display: flex; align-items: center; gap: 18px; margin-bottom: 22px; }
+    .msg-reply-av {
+      width: 56px; height: 56px; flex: 0 0 56px;
+      border-radius: 50%; background-size: cover; background-position: center;
+    }
+    .msg-reply-ctx {
+      font-family: var(--ff-body); font-size: var(--fs-h3); line-height: 1.45;
+      color: rgba(120, 80, 30, .55);
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+    }
+    .msg-reply-ctx b { color: #6B4A2B; font-weight: 700; margin-right: 10px; }
+    .msg-reply-input {
+      display: block; width: 100%; box-sizing: border-box;
+      height: calc(4.5em + 44px);   /* exactly 3 lines (line-height 1.5 × 3 = 4.5em) + 22px top/bottom padding */
+      resize: none;
+      /* transparent borders nudge the scrollbar inward on right/top/bottom (bg still fills to the rounded corner); top/bottom padding reduced 10px so text position and the 3-line height stay unchanged */
+      border: 0; border-top: 10px solid transparent; border-right: 14px solid transparent; border-bottom: 10px solid transparent;
+      background: #FFFDF6; background-clip: border-box;
+      border-radius: 24px;
+      padding: 12px 28px;
+      font-family: var(--ff-body); font-size: var(--fs-h3); line-height: 1.5; color: #6B4A2B;
+      outline: none;
+      overflow-y: auto;
+      /* No scrollbar-width: avoids Chrome's OS scrollbar with up/down arrows; fall back to the webkit custom scrollbar below (matches the detail popup) */
+    }
+    .msg-reply-input::placeholder { color: rgba(120, 80, 30, .42); }
+    /* 滚动条与详情弹窗评论输入框一致：细圆角、无上下三角 */
+    .msg-reply-input::-webkit-scrollbar { width: 6px; }
+    .msg-reply-input::-webkit-scrollbar-track { background: transparent; }
+    .msg-reply-input::-webkit-scrollbar-thumb { background: rgba(159, 138, 110, .72); border-radius: 999px; }
+    .msg-reply-input::-webkit-scrollbar-button { display: none !important; width: 0 !important; height: 0 !important; }
+    .msg-reply-foot { display: flex; align-items: center; gap: 26px; margin-top: 24px; }
+    /* 取消 / 发送 同样大小 */
+    .msg-reply-foot .dr-cancel,
+    .msg-reply-foot .dr-send {
+      box-sizing: border-box;
+      width: 168px; min-width: 168px;
+      display: inline-flex; align-items: center; justify-content: center;
+    }
+    .msg-reply-count {
+      margin-right: auto;               /* counter on the left, buttons stay right */
+      font-family: var(--ff-body); font-weight: 700; font-size: var(--fs-h3);
+      color: #8D7A62;
+    }
+    .msg-reply-count.is-over { color: var(--c-accent-red); }
+  </style>
+</head>
+<body>
+
+<div class="app">
+  <header class="top-row"></header>
+  <aside class="sidebar"></aside>
+  <main class="main">
+    <div class="paper-board paper-board--message">
+
+      <div class="center-tabs" id="msgTabs">
+        <span class="center-tab active" data-tab="like">Likes<span class="tab-badge"></span></span>
+        <span class="center-tab" data-tab="comment">Comments<span class="tab-badge"></span></span>
+        <span class="center-tab" data-tab="follow">Follow<span class="tab-badge"></span></span>
+        <span class="center-tab" data-tab="system">System<span class="tab-badge"></span></span>
+      </div>
+
+      <div class="cards-wrap">
+        <section class="cards-area" id="cardsArea">
+          <div class="msg-list" id="msgList"></div>
+          <div class="msg-loader" id="msgLoader" hidden aria-label="Loading more">
+            <span></span><span></span><span></span>
+          </div>
+        </section>
+        <div class="scrollbar" id="scrollbar">
+          <div class="scrollbar-thumb" id="scrollThumb"></div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<script src="assets/shell.js?v=42"></script>
+<script src="assets/detail-popup.js?v=66"></script>
+<script>
+renderSidebar('message');
+renderTopRow({ showFilter: false, showSort: false, showSearch: false });
+
+const COVER = 'assets/img/card-cover-dream.png';
+const LIVE_COVER = 'assets/img/card-cover-live.png';
+const AVATAR = 'assets/img/avatar-demo.png';
+const TITLE_SNIP = 'Design Title 12 Chars Max';
+const LIVE_TITLE_SNIP = 'Live Title 12 Chars Max';
+
+const data = {
+  like: [
+    { unread: true,  name: 'AuthorName123', kind: 'like', action: 'liked',     target: `your design [${TITLE_SNIP}]`, time: '20:49' },
+    { unread: true,  name: 'AuthorName123', kind: 'like', action: 'and 8 others liked', target: `your design [${TITLE_SNIP}]`, time: 'Yesterday 8:49 PM' },
+    { unread: false, name: 'AuthorName123', kind: 'star', action: 'saved',   target: `your design [${TITLE_SNIP}]`, time: '20:49' },
+    { unread: false, name: 'AuthorName123', kind: 'star', action: 'and 7 others saved', target: `your design [${TITLE_SNIP}]`, time: 'Yesterday 8:49 PM' },
+  ],
+  comment: [
+    { unread: true,  name: 'AuthorName123', action: 'commented', text: 'Wow, this is so fun! How is it not popular yet? Amazing place!', time: '20:49',       liked: false },
+    { unread: true,  name: 'AuthorName123', action: 'replied', text: 'Thanks for sharing! I want to visit this dream, great atmosphere.',                                   time: 'Yesterday 8:49 PM', liked: true  },
+    { unread: false, name: 'AuthorName123', action: 'commented', text: 'Love the colors, any tutorial?',                                                       time: '20:49',       liked: false },
+    { unread: false, name: 'AuthorName123', action: 'commented', text: 'Great storytelling layout, love it!',                                                         time: 'Yesterday 8:49 PM', liked: true  },
+  ],
+  follow: [
+    { unread: true,  name: 'AuthorName123', time: 'Yesterday 8:49 PM',  state: 'back'     },
+    { unread: false, name: 'AuthorName123', time: 'Yesterday 8:49 PM',  state: 'followed' },
+    { unread: false, name: 'AuthorName123', time: 'Yesterday 8:49 PM',  state: 'back'     },
+  ],
+  system: [
+    { unread: true,  alert: '',               text: `Your [${TITLE_SNIP}] approved and published`,                         time: '20:49',       btn: { label: 'View',  tone: 'yellow' } },
+    { unread: true,  alert: 'Review Failed',        text: `Your [${TITLE_SNIP}] failed review: revise wording and re-upload map`,           time: '20:49',       btn: { label: 'Edit',  tone: 'blue' } },
+    { unread: false, alert: '',               text: `Your report on [${TITLE_SNIP}] succeeded, dream removed`,        time: '20:49',       btn: null },
+    { unread: false, alert: '',               text: 'Report on [Player] comment in [Title] succeeded, comment banned 7 days',   time: '20:49',       btn: null },
+    { unread: false, alert: 'Reported',          text: `Your [${TITLE_SNIP}] reported: policy violation`,                         time: '20:49',       btn: { label: 'Appeal',  tone: 'outline' } },
+    { unread: false, alert: 'Reported',          text: `Your [${TITLE_SNIP}] comment [content…] reported`,                       time: '20:49',       btn: { label: 'Appeal',  tone: 'outline' } },
+    { unread: false, alert: 'Violation',         text: `Your live [${LIVE_TITLE_SNIP}] has violations, check your stream`,           time: '20:49',       btn: null, cover: LIVE_COVER },
+    { unread: false, alert: '',               text: `Your booking [${LIVE_TITLE_SNIP}] was cancelled, check others~`,       time: '20:49',       btn: null, cover: LIVE_COVER },
+    { unread: false, alert: '',               text: 'Congrats! [Title] featured on [Chart]',     time: '20:49',       btn: null },
+  ],
+};
+
+const tabs = document.querySelectorAll('#msgTabs .center-tab');
+const list = document.getElementById('msgList');
+const cardsArea = document.getElementById('cardsArea');
+const loader = document.getElementById('msgLoader');
+const BATCH_SIZE = 20;
+const LOAD_DELAY = 600;
+const TOTALS = { like: 48, comment: 12, follow: 9, system: 27 };
+const unreadState = getMessageUnreadState();
+
+function buildMessages(items, total, unreadCount) {
+  return Array.from({ length: total }, (_, index) => ({
+    ...items[index % items.length],
+    messageId: index,
+    commentIndex: index % 4,
+    unread: index < unreadCount,
+  }));
+}
+
+const expandedData = Object.fromEntries(
+  Object.entries(data).map(([key, items]) => [
+    key,
+    buildMessages(items, TOTALS[key], unreadState[key]),
+  ])
+);
+
+const tabState = Object.fromEntries(
+  Object.keys(data).map(key => [key, { rendered: 0, scrollTop: 0 }])
+);
+let currentTab = 'like';
+let isLoading = false;
+let isRestoringScroll = false;
+
+function updateBadges() {
+  tabs.forEach(tab => {
+    const unreadCount = unreadState[tab.dataset.tab];
+    const badge = tab.querySelector('.tab-badge');
+    badge.textContent = unreadCount > 99 ? '99+' : unreadCount;
+    badge.hidden = unreadCount === 0;
+  });
+}
+
+function markTabRead(tabKey) {
+  if (!unreadState[tabKey]) return;
+  unreadState[tabKey] = 0;
+  expandedData[tabKey].forEach(item => { item.unread = false; });
+  setMessageUnreadState(unreadState);
+  updateBadges();
+}
+
+updateBadges();
+
+function renderAvatar(grouped = false) {
+  if (!grouped) {
+    return `<div class="msg-av" style="background-image:url(${AVATAR})"></div>`;
+  }
+  return `
+    <div class="msg-av-stack" aria-label="Avatars">
+      <span class="msg-av-small msg-av-small--back" style="background-image:url(${AVATAR})"></span>
+      <span class="msg-av-small msg-av-small--front" style="background-image:url(${AVATAR})"></span>
+    </div>`;
+}
+
+function actionIcon(kind) {
+  if (kind === 'star') return '<img class="msg-action-icon" src="assets/img/icon-star-mini.png" alt="">';
+  return '<img class="msg-action-icon" src="assets/img/like-mini.png" alt="">';
+}
+
+function renderLike(items) {
+  return items.map(it => `
+    <article class="msg-row${it.unread ? ' is-unread' : ''}" data-message-id="${it.messageId}">
+      ${it.unread ? '<span class="msg-unread-dot" aria-label="Unread"></span>' : ''}
+      ${renderAvatar(it.action.startsWith('and '))}
+      <div class="msg-body">
+        <div class="msg-line1">
+          <span class="msg-name">${it.name}</span>
+          ${actionIcon(it.kind)}
+          <span class="msg-action">${it.action}</span>
+        </div>
+        <div class="msg-line2">
+          <span class="msg-desc">${it.target}</span>
+          <span class="msg-time">${it.time}</span>
+        </div>
+      </div>
+      <div class="msg-thumb" data-open-detail="dream" style="background-image:url(${COVER})"></div>
+    </article>
+  `).join('');
+}
+
+function renderComment(items) {
+  return items.map(it => `
+    <article class="msg-row msg-row--comment${it.unread ? ' is-unread' : ''}" data-message-id="${it.messageId}" data-comment-index="${it.commentIndex}">
+      ${it.unread ? '<span class="msg-unread-dot" aria-label="Unread"></span>' : ''}
+      <div class="msg-av" style="background-image:url(${AVATAR})"></div>
+      <div class="msg-body">
+        <div class="msg-line1">
+          <span class="msg-name">${it.name}</span>
+          <span class="msg-action">${it.action}</span>
+        </div>
+        <div class="msg-line2">
+          <span class="msg-comment-text">${it.text}</span>
+          <span class="msg-time">${it.time}</span>
+        </div>
+      </div>
+      <div class="msg-side-actions">
+        <button type="button" class="msg-reply-btn">Reply</button>
+        <button type="button" class="msg-like-circle${it.liked ? ' is-liked' : ''}" aria-label="Like"></button>
+      </div>
+      <div class="msg-thumb" data-open-detail="comment" style="background-image:url(${COVER})"></div>
+    </article>
+  `).join('');
+}
+
+function renderFollow(items) {
+  return items.map(it => `
+    <article class="msg-row msg-row--follow${it.unread ? ' is-unread' : ''}" data-message-id="${it.messageId}">
+      ${it.unread ? '<span class="msg-unread-dot" aria-label="Unread"></span>' : ''}
+      <div class="msg-av" style="background-image:url(${AVATAR})"></div>
+      <div class="msg-body">
+        <div class="msg-line1">
+          <span class="msg-name">${it.name}</span>
+          <span class="msg-action">followed you</span>
+        </div>
+        <div class="msg-line2">
+          <span class="msg-time">${it.time}</span>
+        </div>
+      </div>
+      <button type="button" class="msg-follow-btn${it.state === 'followed' ? ' is-followed' : ''}">
+        ${it.state === 'followed' ? 'Following' : 'Follow Back'}
+      </button>
+    </article>
+  `).join('');
+}
+
+function renderSystem(items) {
+  return items.map(it => {
+    const alert = it.alert
+      ? `<span class="msg-sys-alert">! ${it.alert}</span>`
+      : '';
+    const btn = it.btn
+      ? `<button type="button" class="msg-sys-btn msg-sys-btn--${it.btn.tone}" data-system-action="${it.btn.label}">${it.btn.label}</button>`
+      : '';
+    return `
+    <article class="msg-row msg-row--system${it.unread ? ' is-unread' : ''}">
+      ${it.unread ? '<span class="msg-unread-dot" aria-label="Unread"></span>' : ''}
+      <div class="msg-sys-icon" aria-hidden="true"></div>
+      <div class="msg-body">
+        <div class="msg-line1 msg-line1--system">
+          <span class="msg-sys-label">System Message</span>
+          ${alert}
+        </div>
+        <div class="msg-line2 msg-line2--system">
+          <span class="msg-desc">${it.text}</span>
+          <span class="msg-time">${it.time}</span>
+        </div>
+      </div>
+      ${btn}
+      <div class="msg-thumb msg-thumb--static" style="background-image:url(${it.cover || COVER})"></div>
+    </article>`;
+  }).join('');
+}
+
+function renderItems(tab, items) {
+  const map = {
+    like:    () => renderLike(items),
+    comment: () => renderComment(items),
+    follow:  () => renderFollow(items),
+    system:  () => renderSystem(items),
+  };
+  return map[tab]();
+}
+
+function appendNextBatch(tab) {
+  const state = tabState[tab];
+  const items = expandedData[tab];
+  const next = items.slice(state.rendered, state.rendered + BATCH_SIZE);
+  list.insertAdjacentHTML('beforeend', renderItems(tab, next));
+  state.rendered += next.length;
+  cardsArea.dispatchEvent(new Event('scroll'));
+}
+
+function render(tab) {
+  const state = tabState[tab];
+  const targetScrollTop = state.scrollTop;
+  isRestoringScroll = true;
+  list.innerHTML = '';
+  loader.hidden = true;
+  isLoading = false;
+  if (state.rendered === 0) {
+    appendNextBatch(tab);
+  } else {
+    list.innerHTML = renderItems(tab, expandedData[tab].slice(0, state.rendered));
+  }
+  cardsArea.scrollTop = targetScrollTop;
+  setTimeout(() => {
+    cardsArea.scrollTop = targetScrollTop;
+    cardsArea.dispatchEvent(new Event('scroll'));
+    setTimeout(() => { isRestoringScroll = false; }, 0);
+  }, 0);
+}
+
+function loadMore() {
+  const state = tabState[currentTab];
+  if (isLoading || state.rendered >= expandedData[currentTab].length) return;
+  const loadingTab = currentTab;
+  isLoading = true;
+  loader.hidden = false;
+  setTimeout(() => {
+    if (currentTab === loadingTab) {
+      loader.hidden = true;
+      appendNextBatch(loadingTab);
+    }
+    isLoading = false;
+  }, LOAD_DELAY);
+}
+
+tabs.forEach(t => {
+  t.onclick = () => {
+    const nextTab = t.dataset.tab;
+    if (nextTab === currentTab) return;
+    tabState[currentTab].scrollTop = cardsArea.scrollTop;
+    isRestoringScroll = true;
+    markTabRead(currentTab);
+    tabs.forEach(x => x.classList.remove('active'));
+    t.classList.add('active');
+    currentTab = nextTab;
+    render(currentTab);
+  };
+});
+
+cardsArea.addEventListener('scroll', () => {
+  if (isRestoringScroll) return;
+  tabState[currentTab].scrollTop = cardsArea.scrollTop;
+  const distanceToBottom = cardsArea.scrollHeight - cardsArea.clientHeight - cardsArea.scrollTop;
+  if (distanceToBottom < 180) loadMore();
+}, { passive: true });
+
+function openCommentReplyModal(item) {
+  const name = (item && item.name) || 'AuthorName123';
+  const text = (item && item.text) || '';
+  const mask = document.createElement('div');
+  mask.className = 'modal-mask mask-60';
+  mask.innerHTML = `
+    <div class="msg-reply-modal" role="dialog" aria-modal="true">
+      <div class="msg-reply-head">
+        <div class="msg-reply-av" style="background-image:url(${AVATAR})"></div>
+        <div class="msg-reply-ctx"><b>${name}</b>Reply to ${name}: ${text}</div>
+      </div>
+      <textarea class="msg-reply-input" placeholder="Reply @${name}"></textarea>
+      <div class="msg-reply-foot">
+        <span class="msg-reply-count">0/70</span>
+        <button type="button" class="dr-cancel" data-reply-cancel>Cancel</button>
+        <button type="button" class="dr-send" data-reply-send>Send</button>
+      </div>
+    </div>`;
+  document.body.appendChild(mask);
+  const ta = mask.querySelector('.msg-reply-input');
+  const cnt = mask.querySelector('.msg-reply-count');
+
+  // Counter: only show past 60 chars, limit 70, turns red past 70 (same as comment composer)
+  function updateReplyCount() {
+    const len = ta.value.length;
+    cnt.textContent = len + '/70';
+    cnt.classList.toggle('is-over', len > 70);
+    cnt.style.visibility = len > 60 ? 'visible' : 'hidden';
+  }
+  updateReplyCount();
+  ta.addEventListener('input', updateReplyCount);
+
+  setTimeout(() => ta.focus(), 0);
+  const close = () => mask.remove();
+  mask.addEventListener('click', e => { if (e.target === mask) close(); });
+  mask.querySelector('[data-reply-cancel]').addEventListener('click', close);
+  mask.querySelector('[data-reply-send]').addEventListener('click', () => {
+    if (!ta.value.trim()) {
+      showPageToast('Reply can’t be empty~', document.querySelector('.paper-board--message'));
+      return;
+    }
+    if (ta.value.length > 70) {
+      showPageToast('Over 70 characters~', document.querySelector('.paper-board--message'));
+      return;
+    }
+    close();
+    showPageToast('Reply sent~', document.querySelector('.paper-board--message'));
+  });
+}
+
+list.addEventListener('click', event => {
+  const followButton = event.target.closest('.msg-follow-btn');
+  if (followButton) {
+    const row = followButton.closest('.msg-row');
+    const item = expandedData.follow.find(message => String(message.messageId) === row.dataset.messageId);
+    const willFollow = !followButton.classList.contains('is-followed');
+    followButton.classList.toggle('is-followed', willFollow);
+    followButton.textContent = willFollow ? 'Following' : 'Follow Back';
+    if (item) item.state = willFollow ? 'followed' : 'back';
+    showPageToast(willFollow ? 'Followed' : 'Unfollowed', document.querySelector('.paper-board--message'));
+    return;
+  }
+
+  const likeButton = event.target.closest('.msg-like-circle');
+  if (likeButton) {
+    likeButton.classList.toggle('is-liked');
+    const row = likeButton.closest('.msg-row');
+    const item = expandedData.comment.find(message => String(message.messageId) === row.dataset.messageId);
+    if (item) item.liked = likeButton.classList.contains('is-liked');
+    return;
+  }
+
+  const replyButton = event.target.closest('.msg-reply-btn');
+  if (replyButton) {
+    const row = replyButton.closest('.msg-row');
+    const item = expandedData.comment.find(message => String(message.messageId) === row.dataset.messageId);
+    openCommentReplyModal(item);
+    return;
+  }
+
+  const systemButton = event.target.closest('.msg-sys-btn[data-system-action]');
+  if (systemButton) {
+    if (systemButton.dataset.systemAction === 'View') {
+      window.openDetailPopup({
+        kind: 'dream',
+        title: TITLE_SNIP,
+        cover: COVER,
+        tag: 'Play Tag',
+        featured: true,
+      });
+    } else if (systemButton.dataset.systemAction === 'Edit') {
+      window.openCreateDreamPopup({ cover: COVER });
+    }
+    return;
+  }
+
+  const thumb = event.target.closest('.msg-thumb[data-open-detail]');
+  if (!thumb) return;
+  const row = thumb.closest('.msg-row');
+  const opts = {
+    kind: 'dream',
+    title: TITLE_SNIP,
+    cover: COVER,
+    tag: 'Play Tag',
+    featured: true,
+  };
+  // Comment TAB thumbnail: open the detail popup and highlight/locate the original comment (reuse V2 jump style)
+  if (thumb.dataset.openDetail === 'comment') {
+    opts.focusCommentIndex = Number(row.dataset.commentIndex || 0);
+  }
+  window.openDetailPopup(opts);
+});
+
+render(currentTab);
+setupScrollbar();
+</script>
+</body>
+</html>

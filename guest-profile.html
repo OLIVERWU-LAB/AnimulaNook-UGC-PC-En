@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="assets/viewport-fit.js"></script>
+  <title>Profile · Code Life</title>
+  <link rel="stylesheet" href="assets/global.css?v=2">
+  <link rel="stylesheet" href="assets/components.css?v=121">
+  <link rel="stylesheet" href="assets/pages.css?v=5">
+</head>
+<body class="guest-profile-page">
+<div class="app guest-profile-app">
+  <header class="search-page-top guest-profile-top">
+    <div class="search-page-title guest-profile-title">
+      <span class="ic"><img src="assets/img/icon-people.png" alt=""></span>
+      <span>Profile</span>
+    </div>
+    <button class="topbar-btn btn-close search-back-btn" type="button" onclick="history.back()" title="Back">
+      <img src="assets/img/search-back.png" alt="Back">
+    </button>
+  </header>
+
+  <main class="search-page-main">
+    <div class="search-page-board guest-profile-board">
+      <div class="cards-wrap">
+        <section class="cards-area guest-profile-scroll" id="cardsArea">
+          <section class="profile-card guest-profile-card">
+            <div class="profile-avatar"></div>
+            <div class="profile-info">
+              <div class="profile-head">
+                <h1 class="profile-name">PlayerName123</h1>
+              </div>
+              <div class="profile-stats guest-profile-stats">
+                <div class="item is-static"><div class="num">9999</div><div class="label">Likes</div></div>
+                <div class="item is-static"><div class="num">20.7w</div><div class="label">Saves</div></div>
+                <div class="item is-static"><div class="num">1503.2w</div><div class="label">Plays</div></div>
+                <span class="sep"></span>
+                <div class="item is-static"><div class="num">9999</div><div class="label">Follow</div></div>
+                <div class="item is-static"><div class="num">9999</div><div class="label">Mutual</div></div>
+                <div class="item is-static"><div class="num">9999</div><div class="label">Fans</div></div>
+              </div>
+            </div>
+            <button class="guest-follow-btn" id="guestFollowBtn" type="button">Follow</button>
+            <img class="guest-profile-deco" src="assets/img/deco-owl-flower.png" alt="">
+          </section>
+
+          <div class="center-tabs guest-profile-tabs" id="guestTabs">
+            <span class="center-tab active" data-tab="dream">Designs</span>
+            <span class="center-tab" data-tab="live">Live<span class="red-dot"></span></span>
+            <span class="center-tab" data-tab="fav">Saves</span>
+          </div>
+
+          <div class="guest-tab-pane" id="guestTabPane">
+            <div class="mine-tab-body" id="tabContent"></div>
+          </div>
+        </section>
+        <div class="scrollbar" id="scrollbar">
+          <div class="scrollbar-thumb" id="scrollThumb"></div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="assets/shell.js?v=42"></script>
+<script src="assets/detail-popup.js?v=66"></script>
+<script>
+const tabContent = document.getElementById('tabContent');
+const cardsArea = document.getElementById('cardsArea');
+const tabState = {
+  dream: { scrollTop: 0 },
+  live: { scrollTop: 0 },
+  fav: { scrollTop: 0 },
+};
+let currentTab = 'dream';
+
+function guestDreamCard(item) {
+  return `
+    <article class="card">
+      <span class="card-tag-featured">Featured</span>
+      <div class="card-cover" style="background-image:url(${item.cover})">
+        <span class="card-tag-left">Play Tag</span>
+        <div class="card-stats">
+          <span class="stat">Online 9999</span>
+          <span class="stat-right"><span class="stat"><img src="assets/img/stat-people.png" alt="">0/6</span></span>
+        </div>
+      </div>
+      <div class="card-title-bar">
+        <span class="avatar"></span>
+        <span class="title">${item.title}</span>
+      </div>
+    </article>`;
+}
+
+function guestHistoryCard(item) {
+  return `
+    <article class="card card--guest-live">
+      <span class="card-tag-featured">Featured</span>
+      <div class="card-cover" style="background-image:url(${item.cover})">
+        <span class="card-tag-left">Play Tag</span>
+        <span class="time-on-cover">${item.time}</span>
+        <div class="card-stats">
+          <span></span>
+          <span class="stat-right"><span class="stat"><img src="assets/img/stat-people.png" alt="">${item.viewers}</span></span>
+        </div>
+      </div>
+      <div class="card-title-bar">
+        <span class="avatar"></span>
+        <span class="title">Live Title 12 Chars Max</span>
+      </div>
+    </article>`;
+}
+
+function renderDream() {
+  const items = Array.from({ length: 18 }, (_, index) => ({
+    cover: 'assets/img/card-cover-dream.png',
+    title: index % 3 === 0 ? 'Design Title 12 Chars Max' : ['Quiet Afternoon', 'Mountain Teahouse', 'Childhood Attic'][index % 3],
+  }));
+  tabContent.innerHTML = `<div class="cards-grid">${items.map(guestDreamCard).join('')}</div>`;
+}
+
+function renderLive() {
+  const history = Array.from({ length: 15 }, (_, index) => ({
+    cover: 'assets/img/card-cover-live.png',
+    time: `2026-02-${String(28 - index % 9).padStart(2, '0')} 11:00 - 18:00 (UTC+8)`,
+    viewers: 6 + index % 4,
+  }));
+  tabContent.innerHTML = `
+    <div class="next-live-bar guest-next-live">
+      <div class="next-live-bar__icon" aria-hidden="true"></div>
+      <div class="next-live-bar__main">
+        <div class="next-live-bar__row">
+          <span class="next-live-bar__label">Next Live</span>
+          <span class="next-live-bar__time">2026.08.13 23:00</span>
+        </div>
+        <div class="next-live-bar__sub">Subs 99.2w</div>
+      </div>
+      <button class="guest-subscribe-btn" id="guestSubscribeBtn" type="button">Subscribe</button>
+    </div>
+    <div class="mine-section">
+      <h3 class="mine-section__title"><span class="name">Past Lives</span><span class="count">28</span></h3>
+      <div class="cards-grid">${history.map(guestHistoryCard).join('')}</div>
+    </div>`;
+
+  document.getElementById('guestSubscribeBtn').onclick = event => {
+    const button = event.currentTarget;
+    const subscribed = button.classList.toggle('is-subscribed');
+    button.textContent = subscribed ? 'Subscribed' : 'Subscribe';
+    showPageToast(subscribed ? 'Subscribed' : 'Unsubscribed');
+  };
+}
+
+function renderFav() {
+  tabContent.innerHTML = `<div class="cards-grid">${makeMixedCards(30).map(renderCard).join('')}</div>`;
+}
+
+const renderers = { dream: renderDream, live: renderLive, fav: renderFav };
+document.querySelectorAll('#guestTabs .center-tab').forEach(tab => {
+  tab.onclick = () => {
+    if (tab.dataset.tab === currentTab) return;
+    currentTab = tab.dataset.tab;
+    document.querySelectorAll('#guestTabs .center-tab').forEach(item => {
+      item.classList.toggle('active', item === tab);
+    });
+    renderers[currentTab]();
+    cardsArea.scrollTop = tabState[currentTab].scrollTop;
+    requestAnimationFrame(() => {
+      cardsArea.scrollTop = tabState[currentTab].scrollTop;
+      refreshGuestScroll();
+    });
+  };
+});
+
+cardsArea.addEventListener('scroll', () => {
+  tabState[currentTab].scrollTop = cardsArea.scrollTop;
+}, { passive: true });
+
+document.getElementById('guestFollowBtn').onclick = event => {
+  const button = event.currentTarget;
+  const followed = button.classList.toggle('is-followed');
+  button.textContent = followed ? 'Following' : 'Follow';
+  showPageToast(followed ? 'Followed' : 'Unfollowed');
+};
+
+function setupGuestTabClip() {
+  const pane = document.getElementById('guestTabPane');
+  const tabs = document.getElementById('guestTabs');
+  if (!cardsArea || !pane || !tabs) return () => {};
+
+  const CLIP_OFFSET = 28;
+  let clipStart = 0;
+
+  function measure() {
+    clipStart = pane.offsetTop - tabs.offsetHeight;
+  }
+
+  function paintClip() {
+    const raw = cardsArea.scrollTop - clipStart;
+    const cut = raw <= 0 ? 0 : Math.ceil(raw) + CLIP_OFFSET;
+    pane.style.clipPath = cut > 0 ? `inset(${cut}px 0 0 0)` : 'none';
+  }
+
+  function sync() {
+    measure();
+    paintClip();
+  }
+
+  cardsArea.addEventListener('scroll', paintClip, { passive: true });
+  window.addEventListener('resize', sync);
+  sync();
+  return sync;
+}
+
+const syncGuestTabClip = setupGuestTabClip();
+
+function refreshGuestScroll() {
+  setupScrollbar();
+  syncGuestTabClip();
+}
+
+renderDream();
+setTimeout(refreshGuestScroll, 50);
+</script>
+</body>
+</html>

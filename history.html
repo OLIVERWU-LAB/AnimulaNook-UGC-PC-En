@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="assets/viewport-fit.js"></script>
+  <title>History · Code Life</title>
+  <link rel="stylesheet" href="assets/global.css?v=2">
+  <link rel="stylesheet" href="assets/components.css?v=121">
+  <link rel="stylesheet" href="assets/pages.css">
+</head>
+<body>
+
+<div class="app" style="grid-template-columns: 1fr;">
+
+  <header class="search-page-top">
+    <div class="solo-title">
+      <span class="ic"><img src="assets/img/icon-history-amber.png" alt=""></span>
+      <span>History</span>
+    </div>
+    <div class="spacer"></div>
+    <button class="topbar-btn btn-close" onclick="history.back()" title="Close">
+      <img src="assets/img/btn-close.png" alt="Close">
+    </button>
+  </header>
+
+  <main class="search-page-main">
+    <div class="search-page-board">
+      <div class="cards-wrap">
+        <section class="cards-area" id="cardsArea">
+          <div class="cards-grid" id="grid"></div>
+        </section>
+        <div class="scrollbar" id="scrollbar">
+          <div class="scrollbar-thumb" id="scrollThumb"></div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="assets/shell.js?v=42"></script>
+<script src="assets/detail-popup.js?v=66"></script>
+<script>
+// 浏览记录：混合卡片
+document.getElementById('grid').innerHTML = makeMixedCards(15).map(renderCard).join('');
+setupScrollbar();
+</script>
+</body>
+</html>
